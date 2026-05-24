@@ -121,24 +121,29 @@ async function voziaListRecordings() {
   return data || [];
 }
 
-async function voziaUploadVoiceRecording({ phraseIndex, phraseCategory, phraseText, audioBlob, durationMs }) {
+async function voziaUploadVoiceRecording({ phraseIndex, phraseCategory, phraseText, audioBlob, durationMs, mimeType, extension }) {
   const sb = voziaSupabase || iniciarSupabase();
   if (!sb) throw new Error("Supabase não configurado.");
 
   const user = await voziaGetUser();
   if (!user) throw new Error("Usuário não autenticado.");
 
-  const fileName = `frase-${String(phraseIndex + 1).padStart(3, "0")}-${Date.now()}.webm`;
+  const finalMime = mimeType || audioBlob?.type || "audio/mp4";
+  const safeExt = extension || (
+    finalMime.includes("mp4") ? "mp4" :
+    finalMime.includes("mpeg") ? "mp3" :
+    finalMime.includes("ogg") ? "ogg" :
+    finalMime.includes("wav") ? "wav" :
+    "webm"
+  );
+
+  const fileName = `frase-${String(phraseIndex + 1).padStart(3, "0")}-${Date.now()}.${safeExt}`;
   const path = `${user.id}/${fileName}`;
 
-  const { error: uploadError } = await sb.storage
-    .from("voice-recordings")
-    .upload(path, audioBlob, {
-      contentType: "audio/webm",
-      upsert: true
-    });
-
-  if (uploadError) throw uploadError;
+  const upload = await voziaUploadWithBucketFallback("voice", path, audioBlob, {
+    contentType: finalMime,
+    upsert: false
+  });
 
   const { error: dbError } = await sb.from("recordings").upsert({
     user_id: user.id,
@@ -154,7 +159,7 @@ async function voziaUploadVoiceRecording({ phraseIndex, phraseCategory, phraseTe
 
   if (dbError) throw dbError;
 
-  return path;
+  return { path, bucket: upload.bucket };
 }
 
 async function voziaListLegacyMessages() {
@@ -171,7 +176,7 @@ async function voziaListLegacyMessages() {
   return data || [];
 }
 
-async function voziaSaveLegacyMessage({ title, recipient, note, isPriority, audioBlob, durationMs }) {
+async function voziaSaveLegacyMessage({ title, recipient, note, isPriority, audioBlob, durationMs, mimeType, extension }) {
   const sb = voziaSupabase || iniciarSupabase();
   if (!sb) throw new Error("Supabase não configurado.");
 
@@ -181,17 +186,22 @@ async function voziaSaveLegacyMessage({ title, recipient, note, isPriority, audi
   let audioPath = null;
 
   if (audioBlob) {
-    const fileName = `mensagem-${Date.now()}.webm`;
+    const finalMime = mimeType || audioBlob?.type || "audio/mp4";
+    const safeExt = extension || (
+      finalMime.includes("mp4") ? "mp4" :
+      finalMime.includes("mpeg") ? "mp3" :
+      finalMime.includes("ogg") ? "ogg" :
+      finalMime.includes("wav") ? "wav" :
+      "webm"
+    );
+
+    const fileName = `mensagem-${Date.now()}.${safeExt}`;
     audioPath = `${user.id}/${fileName}`;
 
-    const { error: uploadError } = await sb.storage
-      .from("legacy-audios")
-      .upload(audioPath, audioBlob, {
-        contentType: "audio/webm",
-        upsert: true
-      });
-
-    if (uploadError) throw uploadError;
+    await voziaUploadWithBucketFallback("legacy", audioPath, audioBlob, {
+      contentType: finalMime,
+      upsert: false
+    });
   }
 
   const { error } = await sb.from("legacy_messages").insert({
@@ -243,6 +253,94 @@ async function voziaListCareRequests() {
   return data || [];
 }
 
+
+// ============================================================
+// VOZIA — Buckets Supabase com fallback
+// Aceita buckets em inglês e em português.
+// ============================================================
+
+const VOZIA_BUCKET_CANDIDATES = {
+  voice: [
+    "voice-recordings",
+    "gravações de voz",
+    "gravacoes de voz",
+    "gravações-de-voz",
+    "gravacoes-de-voz"
+  ],
+  legacy: [
+    "legacy-audios",
+    "áudios legados",
+    "audios legados",
+    "áudios-legados",
+    "audios-legados"
+  ],
+  photos: [
+    "patient-photos",
+    "fotos de pacientes",
+    "fotos-de-pacientes"
+  ],
+  documents: [
+    "patient-documents",
+    "documentos do paciente",
+    "documentos-do-paciente"
+  ]
+};
+
+async function voziaUploadWithBucketFallback(bucketType, path, fileBlob, options = {}) {
+  const sb = voziaSupabase || iniciarSupabase();
+  if (!sb) throw new Error("Supabase não configurado.");
+
+  const buckets = VOZIA_BUCKET_CANDIDATES[bucketType] || [bucketType];
+  const errors = [];
+
+  for (const bucket of buckets) {
+    try {
+      const { data, error } = await sb.storage
+        .from(bucket)
+        .upload(path, fileBlob, options);
+
+      if (!error) {
+        return { bucket, data };
+      }
+
+      errors.push(`${bucket}: ${error.message || JSON.stringify(error)}`);
+    } catch (e) {
+      errors.push(`${bucket}: ${e.message || e}`);
+    }
+  }
+
+  throw new Error(
+    "Não consegui enviar o arquivo para o Supabase Storage. " +
+    "Verifique se existe o bucket correto. Tentativas: " + errors.join(" | ")
+  );
+}
+
+async function voziaSignedUrlWithBucketFallback(bucketType, path, expiresIn = 600) {
+  const sb = voziaSupabase || iniciarSupabase();
+  if (!sb) throw new Error("Supabase não configurado.");
+
+  const buckets = VOZIA_BUCKET_CANDIDATES[bucketType] || [bucketType];
+  const errors = [];
+
+  for (const bucket of buckets) {
+    try {
+      const { data, error } = await sb.storage
+        .from(bucket)
+        .createSignedUrl(path, expiresIn);
+
+      if (!error && data?.signedUrl) {
+        return { bucket, signedUrl: data.signedUrl };
+      }
+
+      errors.push(`${bucket}: ${error?.message || "sem URL"}`);
+    } catch (e) {
+      errors.push(`${bucket}: ${e.message || e}`);
+    }
+  }
+
+  throw new Error("Não consegui gerar link assinado. " + errors.join(" | "));
+}
+
 function qualidadeAudio(ms) {
   if (!ms) return "Duração não informada.";
   if (ms < 900) return "Áudio muito curto. Regravar se a frase não ficou completa.";
@@ -284,6 +382,41 @@ async function voziaUpdatePassword(newPassword) {
 
   return data;
 }
+
+async function voziaGetSignedVoiceUrl(audioPath) {
+  const sb = voziaSupabase || iniciarSupabase();
+  if (!sb) throw new Error("Supabase não configurado.");
+
+  const { data, error } = await sb.storage
+    .from("voice-recordings")
+    .createSignedUrl(audioPath, 60 * 10);
+
+  if (error) throw error;
+  return data.signedUrl;
+}
+
+async function voziaCheckSupabaseUserReady() {
+  const sb = voziaSupabase || iniciarSupabase();
+  if (!sb) throw new Error("Supabase não configurado.");
+
+  const user = await voziaGetUser();
+  if (!user) throw new Error("Usuário não autenticado.");
+
+  const { data: profile, error } = await sb
+    .from("profiles")
+    .select("id,name,email,plan,vault_id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  if (!profile) {
+    throw new Error("Usuário existe no Auth, mas ainda não tem profile. Crie o perfil na tabela profiles.");
+  }
+
+  return { user, profile };
+}
+
 window.addEventListener("DOMContentLoaded", () => {
   iniciarSupabase();
 });

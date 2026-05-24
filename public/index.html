@@ -15,7 +15,8 @@
 <section id="landing" class="home">
   <header class="siteNav">
     <div class="brandBig">VOZIA <span>VAULT</span></div>
-    <nav>
+    <button id="mobileMenuBtn" class="mobileMenuBtn" type="button" aria-label="Abrir menu">☰</button>
+    <nav id="mainNav">
       <a href="#beneficios">Benefícios</a>
       <a href="#vozia-care">Vozia Care incluso</a>
       <a href="#planos">Planos</a>
@@ -416,5 +417,30 @@
 <script src="/app.js"></script>
 <script src="/supabase-passo3-login.js"></script>
 <script src="/supabase-password.js"></script>
+<script src="/supabase-recording-fix.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const btn = document.getElementById("mobileMenuBtn");
+  const nav = document.getElementById("mainNav");
+  if (btn && nav) {
+    btn.addEventListener("click", function () {
+      nav.classList.toggle("open");
+      btn.textContent = nav.classList.contains("open") ? "×" : "☰";
+    });
+    nav.querySelectorAll("a, button").forEach(function (item) {
+      item.addEventListener("click", function () {
+        if (window.innerWidth <= 820) {
+          nav.classList.remove("open");
+          btn.textContent = "☰";
+        }
+      });
+    });
+  }
+});
+</script>
+
+<script src="/supabase-audio-fix-final.js"></script>
+<script src="/supabase-iphone-audio-fix.js"></script>
 </body>
 </html>
