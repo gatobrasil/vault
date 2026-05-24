@@ -1,3 +1,13 @@
+## V8.8 — Correções gravação, admin Supabase e Vercel estático
+
+- Adicionado cronômetro visual durante gravação do banco de voz.
+- Corrigida prévia de áudio após parar gravação.
+- Corrigido salvamento de gravação usando Supabase Storage quando disponível.
+- Adicionado arquivo `supabase-recording-fix.js`.
+- Substituído admin antigo dependente de `/api` por painel admin Supabase.
+- Adicionado `supabase_admin_policies.sql` para liberar leitura administrativa ao e-mail autorizado.
+- Adicionado `vercel.json` para publicar como site estático na Vercel.
+
 
 ## V8.7 — Protocolo sequencial do paciente
 
