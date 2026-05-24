@@ -1,3 +1,20 @@
+## V8.10 — Gravação Supabase corrigida
+
+- Corrigido player de áudio após parar gravação.
+- Corrigido botão "Aprovar e avançar" sem depender de `/api`.
+- Salvamento agora usa `voziaUploadVoiceRecording()` e Supabase Storage.
+- Avanço para próxima frase agora recarrega `recordings` do Supabase.
+- Adicionado SQL `supabase_v8_10_fix_recordings.sql` para confirmar tabelas, buckets e policies por usuário.
+- Banco de voz agora salva por `user_id`, isolando dados de cada paciente cadastrado.
+
+## V8.9 — Index responsivo mobile
+
+- Adicionado botão de menu mobile na home.
+- Ajustada a landing page para telas pequenas.
+- Corrigidos grids, cards, botões, formulário de login/cadastro e protocolo para celular.
+- Melhorada visualização do gravador, mapa de frases e player de áudio no mobile.
+- Adicionados breakpoints para 1100px, 820px e 480px.
+
 ## V8.8 — Correções gravação, admin Supabase e Vercel estático
 
 - Adicionado cronômetro visual durante gravação do banco de voz.

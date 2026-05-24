@@ -121,21 +121,30 @@ async function voziaListRecordings() {
   return data || [];
 }
 
-async function voziaUploadVoiceRecording({ phraseIndex, phraseCategory, phraseText, audioBlob, durationMs }) {
+async function voziaUploadVoiceRecording({ phraseIndex, phraseCategory, phraseText, audioBlob, durationMs, mimeType, extension }) {
   const sb = voziaSupabase || iniciarSupabase();
   if (!sb) throw new Error("Supabase não configurado.");
 
   const user = await voziaGetUser();
   if (!user) throw new Error("Usuário não autenticado.");
 
-  const fileName = `frase-${String(phraseIndex + 1).padStart(3, "0")}-${Date.now()}.webm`;
+  const safeExt = extension || (
+    (mimeType || audioBlob?.type || "").includes("mp4") ? "mp4" :
+    (mimeType || audioBlob?.type || "").includes("ogg") ? "ogg" :
+    (mimeType || audioBlob?.type || "").includes("mpeg") ? "mp3" :
+    "webm"
+  );
+
+  const contentType = mimeType || audioBlob?.type || "audio/webm";
+
+  const fileName = `frase-${String(phraseIndex + 1).padStart(3, "0")}-${Date.now()}.${safeExt}`;
   const path = `${user.id}/${fileName}`;
 
   const { error: uploadError } = await sb.storage
     .from("voice-recordings")
     .upload(path, audioBlob, {
-      contentType: "audio/webm",
-      upsert: true
+      contentType,
+      upsert: false
     });
 
   if (uploadError) throw uploadError;

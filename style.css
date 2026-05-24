@@ -764,3 +764,11 @@ img,video,audio,canvas,svg{max-width:100%}
   100%{transform:scale(.95);box-shadow:0 0 0 0 rgba(251,113,133,0)}
 }
 .preview audio,#audioPreview,#legacyPreview{width:100%;margin-top:10px;border-radius:12px}
+
+/* === V8.11 audio fix final === */
+#listenFixedBtn{
+  min-width:160px;
+}
+#recordDebugMsg{
+  margin-top:14px;
+}
