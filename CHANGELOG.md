@@ -1,3 +1,19 @@
+## V8.12 — iPhone e buckets Supabase
+
+- Corrigido problema de gravação/reprodução no iPhone/Safari.
+- Preferência por `audio/mp4` no iOS quando suportado.
+- Adicionado fallback para buckets em português e inglês.
+- Incluído SQL `supabase_v8_12_iphone_buckets_fix.sql`.
+- O upload de áudio agora tenta `voice-recordings` e também `gravações de voz`.
+
+## V8.11 — Correção final do áudio
+
+- Corrigido erro ao clicar em parar/escutar causado por formato de áudio não suportado em alguns navegadores.
+- O sistema não força mais `audio/webm`; agora escolhe automaticamente o melhor MIME suportado.
+- Adicionado botão próprio "Ouvir gravação".
+- Salvamento no Supabase agora envia `contentType` e extensão corretos.
+- Mantido isolamento por `user_id` no banco `recordings` e Storage `voice-recordings`.
+
 ## V8.10 — Gravação Supabase corrigida
 
 - Corrigido player de áudio após parar gravação.

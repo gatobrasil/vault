@@ -772,3 +772,7 @@ img,video,audio,canvas,svg{max-width:100%}
 #recordDebugMsg{
   margin-top:14px;
 }
+
+/* === V8.12 iPhone audio fix === */
+#listenFixedBtn{min-width:160px}
+#recordDebugMsg{margin-top:14px}
