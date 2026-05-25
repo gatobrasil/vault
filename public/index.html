@@ -386,6 +386,48 @@ body:has(#landing.vv-home){
   .vv-btn{width:100%}
 }
 </style>
+
+<style id="vozia-home-auth-fix-css">
+/* Correção: a home nova não pode quebrar os botões antigos do cadastro/login */
+.vv-home .vv-btn,
+.vv-nav .vv-btn{
+  display:inline-flex!important;
+  align-items:center;
+  justify-content:center;
+}
+
+/* Quando o usuário clica em "Criar cofre", forçamos a área antiga de cadastro/login a aparecer */
+body.home-open-auth #auth,
+body.home-open-auth section#auth{
+  display:block!important;
+  visibility:visible!important;
+  opacity:1!important;
+  height:auto!important;
+  max-height:none!important;
+  overflow:visible!important;
+}
+
+/* Restaura botões dentro do cadastro/login/app caso alguma classe global tenha afetado */
+#auth button,
+#auth .btn,
+#auth input[type="button"],
+#auth input[type="submit"],
+#app button,
+#app .btn{
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+}
+
+/* Garante que botão voltar/sair apareça em telas internas antigas */
+.top button,
+header button,
+nav button{
+  visibility:visible!important;
+  opacity:1!important;
+}
+</style>
+
 </head>
 <body>
 
@@ -562,7 +604,7 @@ body:has(#landing.vv-home){
           O Vozia Vault une tecnologia, cuidado e família para ajudar pessoas que podem perder a fala
           a preservar sua voz, deixar mensagens importantes e encontrar novas formas de se comunicar.
         </p>
-        <button class="vv-btn" type="button" onclick="window.voziaAbrirCadastroHome && window.voziaAbrirCadastroHome();">Criar meu cofre agora</button>
+        <button class="vv-btn" type="button" onclick="window.voziaIrParaCadastro && window.voziaIrParaCadastro();">Criar meu cofre agora</button>
       </div>
     </div>
   </section>
@@ -862,3 +904,90 @@ document.addEventListener("DOMContentLoaded", function () {
 <script src="/supabase-iphone-audio-fix.js"></script>
 <script src="/supabase-flex-protocol.js"></script>
 <script src="/supabase-legacy-recorder-fix.js"></script>
+
+<script id="vozia-home-auth-fix-js">
+(function () {
+  function showEl(el) {
+    if (!el) return;
+    el.classList.remove("hidden");
+    el.removeAttribute("hidden");
+    el.style.display = "";
+    el.style.visibility = "visible";
+    el.style.opacity = "1";
+    el.style.maxHeight = "none";
+    el.style.overflow = "visible";
+  }
+
+  function abrirCadastro() {
+    document.body.classList.add("home-open-auth");
+
+    var auth = document.getElementById("auth");
+    showEl(auth);
+
+    // Restaura cartões comuns de cadastro/login sem depender do nome exato.
+    [
+      "signupCard",
+      "registerCard",
+      "loginCard",
+      "authCard",
+      "createVaultCard",
+      "forgotPasswordCard"
+    ].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el && id !== "forgotPasswordCard") showEl(el);
+    });
+
+    // Garante que botões dentro do auth não tenham ficado desabilitados visualmente.
+    if (auth) {
+      auth.querySelectorAll("button,input,select,textarea").forEach(function (el) {
+        el.style.visibility = "visible";
+        el.style.opacity = "1";
+        el.style.pointerEvents = "auto";
+      });
+    }
+
+    setTimeout(function () {
+      var target = auth || document.body;
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+
+      var firstInput = target.querySelector('input:not([type="hidden"]), select, textarea');
+      if (firstInput && window.innerWidth > 760) {
+        setTimeout(function () {
+          try { firstInput.focus(); } catch(e) {}
+        }, 450);
+      }
+    }, 120);
+  }
+
+  window.voziaIrParaCadastro = abrirCadastro;
+  window.voziaAbrirCadastroHome = abrirCadastro;
+
+  function conectarBotoes() {
+    ["startBtn", "startBtn2"].forEach(function (id) {
+      var btn = document.getElementById(id);
+      if (btn && !btn.dataset.voziaCadastroFix) {
+        btn.dataset.voziaCadastroFix = "1";
+        btn.addEventListener("click", function (ev) {
+          ev.preventDefault();
+          abrirCadastro();
+        });
+      }
+    });
+
+    document.querySelectorAll('[data-open-auth], .js-open-auth, a[href="#auth"]').forEach(function (btn) {
+      if (!btn.dataset.voziaCadastroFix) {
+        btn.dataset.voziaCadastroFix = "1";
+        btn.addEventListener("click", function (ev) {
+          ev.preventDefault();
+          abrirCadastro();
+        });
+      }
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", conectarBotoes);
+  document.addEventListener("click", function () {
+    setTimeout(conectarBotoes, 50);
+  }, true);
+})();
+</script>
