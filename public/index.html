@@ -5,352 +5,135 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Vozia Vault | Preserve a voz antes que ela se perca</title>
 <link rel="stylesheet" href="/style.css">
+
 <style>
-:root{
-  --vv-bg:#070B18;
-  --vv-bg2:#0B1329;
-  --vv-surface:rgba(255,255,255,.075);
-  --vv-border:rgba(255,255,255,.12);
-  --vv-text:#FFFFFF;
-  --vv-muted:#B8C3DA;
-  --vv-cyan:#22D3EE;
-  --vv-blue:#38BDF8;
-  --vv-purple:#7C3AED;
-  --vv-pink:#A78BFA;
-}
-*{box-sizing:border-box}
-body{
-  margin:0;
-  background:var(--vv-bg);
-  color:var(--vv-text);
-  font-family:Inter,Arial,Helvetica,sans-serif;
-}
-body:has(#landing.vv-home){
+/* ============================================================
+   VOZIA VAULT — HOME EMOCIONAL ISOLADA
+   Somente classes vv-* para não quebrar login/cadastro/app.
+   ============================================================ */
+.vv-home{
+  color:#fff;
   background:
     radial-gradient(circle at 10% 0%,rgba(124,58,237,.28),transparent 33%),
     radial-gradient(circle at 90% 8%,rgba(34,211,238,.18),transparent 30%),
     linear-gradient(135deg,#050713 0%,#071022 45%,#0b1024 100%);
-}
-.vv-home{
-  width:100%;
   overflow:hidden;
-  color:#fff;
 }
-.vv-wrap{
-  width:min(1220px,92vw);
-  margin:0 auto;
-}
+.vv-wrap{width:min(1220px,92vw);margin:0 auto}
 .vv-nav{
-  position:sticky;
-  top:0;
-  z-index:50;
+  position:sticky;top:0;z-index:20;
   background:rgba(5,8,18,.82);
   backdrop-filter:blur(16px);
   border-bottom:1px solid rgba(255,255,255,.10);
 }
 .vv-nav-inner{
-  width:min(1220px,92vw);
-  margin:0 auto;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:18px;
-  padding:18px 0;
+  width:min(1220px,92vw);margin:0 auto;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:18px;padding:18px 0;
 }
-.vv-brand{
-  font-size:26px;
-  font-weight:950;
-  letter-spacing:.13em;
-  white-space:nowrap;
-}
+.vv-brand{font-size:26px;font-weight:950;letter-spacing:.13em;white-space:nowrap}
 .vv-brand span{color:#7DD3FC}
-.vv-menu{
-  display:flex;
-  align-items:center;
-  gap:18px;
-  flex-wrap:wrap;
-}
-.vv-menu a{
-  color:#C5CEE3;
-  text-decoration:none;
-  font-size:14px;
-  font-weight:850;
-}
+.vv-menu{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.vv-menu a{color:#C5CEE3;text-decoration:none;font-size:14px;font-weight:850}
 .vv-menu a:hover{color:#fff}
 .vv-mobile{
-  display:none;
-  background:rgba(255,255,255,.08);
-  border:1px solid rgba(255,255,255,.18);
-  color:#fff;
-  border-radius:14px;
-  padding:10px 14px;
-  font-weight:900;
+  display:none;background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.18);color:#fff;
+  border-radius:14px;padding:10px 14px;font-weight:900;
 }
 .vv-btn{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  gap:8px;
-  border:0;
-  border-radius:16px;
-  padding:14px 22px;
-  background:linear-gradient(135deg,var(--vv-purple),var(--vv-cyan));
-  color:#fff;
-  text-decoration:none;
-  font-weight:950;
-  cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  border:0;border-radius:16px;padding:14px 22px;
+  background:linear-gradient(135deg,#7C3AED,#22D3EE);
+  color:#fff;text-decoration:none;font-weight:950;cursor:pointer;
   box-shadow:0 18px 50px rgba(34,211,238,.22);
   transition:.22s ease;
 }
 .vv-btn:hover{transform:translateY(-2px);filter:brightness(1.05)}
-.vv-btn-ghost{
-  background:rgba(255,255,255,.07);
-  border:1px solid rgba(255,255,255,.14);
-  box-shadow:none;
-}
-.vv-hero{
-  padding:78px 0 52px;
-  position:relative;
-}
-.vv-hero-grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:48px;
-  align-items:center;
-}
+.vv-btn-ghost{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);box-shadow:none}
+.vv-hero{padding:78px 0 52px;position:relative}
+.vv-hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
 .vv-kicker{
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  border-radius:999px;
-  padding:9px 14px;
-  background:rgba(34,211,238,.10);
-  border:1px solid rgba(125,211,252,.28);
-  color:#E0F7FF;
-  font-weight:900;
-  margin-bottom:18px;
+  display:inline-flex;align-items:center;gap:8px;border-radius:999px;
+  padding:9px 14px;background:rgba(34,211,238,.10);
+  border:1px solid rgba(125,211,252,.28);color:#E0F7FF;
+  font-weight:900;margin-bottom:18px;
 }
-.vv-hero h1{
-  font-size:clamp(42px,6vw,76px);
-  line-height:.98;
-  letter-spacing:-.055em;
-  margin:0 0 22px;
-}
+.vv-hero h1{font-size:clamp(42px,6vw,76px);line-height:.98;letter-spacing:-.055em;margin:0 0 22px}
 .vv-gradient-text{
   background:linear-gradient(135deg,#fff,#93C5FD 48%,#C4B5FD);
-  -webkit-background-clip:text;
-  background-clip:text;
-  color:transparent;
+  -webkit-background-clip:text;background-clip:text;color:transparent;
 }
-.vv-lead{
-  color:#C3CCE4;
-  font-size:19px;
-  line-height:1.65;
-  max-width:720px;
-  margin:0 0 26px;
-}
-.vv-actions{
-  display:flex;
-  gap:14px;
-  flex-wrap:wrap;
-  margin:28px 0 24px;
-}
-.vv-trust-row{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:12px;
-}
+.vv-lead{color:#C3CCE4;font-size:19px;line-height:1.65;max-width:720px;margin:0 0 26px}
+.vv-actions{display:flex;gap:14px;flex-wrap:wrap;margin:28px 0 24px}
+.vv-trust-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .vv-trust{
-  padding:14px;
-  border-radius:18px;
-  background:rgba(255,255,255,.055);
-  border:1px solid rgba(255,255,255,.11);
-  color:#EEF2FF;
-  font-weight:850;
+  padding:14px;border-radius:18px;background:rgba(255,255,255,.055);
+  border:1px solid rgba(255,255,255,.11);color:#EEF2FF;font-weight:850;
 }
 .vv-visual{position:relative}
 .vv-img-card{
-  border-radius:34px;
-  overflow:hidden;
-  border:1px solid rgba(255,255,255,.12);
-  box-shadow:0 30px 90px rgba(0,0,0,.45);
-  background:#061021;
+  border-radius:34px;overflow:hidden;border:1px solid rgba(255,255,255,.12);
+  box-shadow:0 30px 90px rgba(0,0,0,.45);background:#061021;
 }
-.vv-img-card img{
-  display:block;
-  width:100%;
-  height:560px;
-  object-fit:cover;
-}
+.vv-img-card img{display:block;width:100%;height:560px;object-fit:cover}
 .vv-floating-card{
-  position:absolute;
-  left:-26px;
-  bottom:26px;
-  max-width:330px;
-  padding:18px;
-  border-radius:24px;
-  background:rgba(8,12,28,.88);
-  border:1px solid rgba(125,211,252,.24);
-  backdrop-filter:blur(14px);
+  position:absolute;left:-26px;bottom:26px;max-width:330px;padding:18px;
+  border-radius:24px;background:rgba(8,12,28,.88);
+  border:1px solid rgba(125,211,252,.24);backdrop-filter:blur(14px);
   box-shadow:0 20px 60px rgba(0,0,0,.35);
 }
-.vv-floating-card strong{
-  display:block;
-  font-size:18px;
-  margin-bottom:6px;
-}
+.vv-floating-card strong{display:block;font-size:18px;margin-bottom:6px}
 .vv-floating-card span{color:#B8C5DF}
-.vv-strip{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:14px;
-  padding:20px 0 72px;
-}
+.vv-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:20px 0 72px}
 .vv-strip-item{
-  padding:22px;
-  border-radius:24px;
+  padding:22px;border-radius:24px;
   background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.04));
   border:1px solid rgba(255,255,255,.10);
 }
-.vv-strip-item b{
-  display:block;
-  font-size:22px;
-  margin-bottom:4px;
-}
+.vv-strip-item b{display:block;font-size:22px;margin-bottom:4px}
 .vv-strip-item span{color:#B9C2DC}
-.vv-section{
-  padding:86px 0;
-}
-.vv-section-soft{
-  background:rgba(255,255,255,.025);
-  border-top:1px solid rgba(255,255,255,.07);
-  border-bottom:1px solid rgba(255,255,255,.07);
-}
-.vv-head{
-  text-align:center;
-  max-width:860px;
-  margin:0 auto 42px;
-}
-.vv-head h2,.vv-split h2,.vv-final h2{
-  font-size:clamp(32px,4vw,54px);
-  line-height:1.06;
-  letter-spacing:-.04em;
-  margin:0 0 16px;
-}
-.vv-head p,.vv-split p,.vv-final p{
-  color:#C2CBE2;
-  font-size:18px;
-  line-height:1.7;
-}
-.vv-card-grid{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:18px;
-}
+.vv-section{padding:86px 0}
+.vv-section-soft{background:rgba(255,255,255,.025);border-top:1px solid rgba(255,255,255,.07);border-bottom:1px solid rgba(255,255,255,.07)}
+.vv-head{text-align:center;max-width:860px;margin:0 auto 42px}
+.vv-head h2,.vv-split h2,.vv-final h2{font-size:clamp(32px,4vw,54px);line-height:1.06;letter-spacing:-.04em;margin:0 0 16px}
+.vv-head p,.vv-split p,.vv-final p{color:#C2CBE2;font-size:18px;line-height:1.7}
+.vv-card-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
 .vv-card,.vv-step,.vv-plan{
   border:1px solid rgba(255,255,255,.10);
   background:linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,.035));
-  border-radius:28px;
-  padding:26px;
-  box-shadow:0 18px 50px rgba(0,0,0,.20);
+  border-radius:28px;padding:26px;box-shadow:0 18px 50px rgba(0,0,0,.20);
 }
-.vv-card .icon{
-  font-size:30px;
-  margin-bottom:12px;
-}
-.vv-card h3,.vv-step h3,.vv-plan h3{
-  margin:0 0 10px;
-  font-size:22px;
-}
-.vv-card p,.vv-step p,.vv-plan p{
-  margin:0;
-  color:#BBC5DC;
-  line-height:1.65;
-}
-.vv-split{
-  display:grid;
-  grid-template-columns:.95fr 1.05fr;
-  gap:46px;
-  align-items:center;
-}
+.vv-card .vv-icon{font-size:30px;margin-bottom:12px}
+.vv-card h3,.vv-step h3,.vv-plan h3{margin:0 0 10px;font-size:22px}
+.vv-card p,.vv-step p,.vv-plan p{margin:0;color:#BBC5DC;line-height:1.65}
+.vv-split{display:grid;grid-template-columns:.95fr 1.05fr;gap:46px;align-items:center}
 .vv-split.reverse{grid-template-columns:1.05fr .95fr}
-.vv-split-img{
-  border-radius:32px;
-  overflow:hidden;
-  border:1px solid rgba(255,255,255,.11);
-  box-shadow:0 30px 80px rgba(0,0,0,.38);
-}
-.vv-split-img img{
-  display:block;
-  width:100%;
-  height:450px;
-  object-fit:cover;
-}
-.vv-list{
-  display:grid;
-  gap:12px;
-  margin-top:22px;
-}
+.vv-split-img{border-radius:32px;overflow:hidden;border:1px solid rgba(255,255,255,.11);box-shadow:0 30px 80px rgba(0,0,0,.38)}
+.vv-split-img img{display:block;width:100%;height:450px;object-fit:cover}
+.vv-list{display:grid;gap:12px;margin-top:22px}
 .vv-list div{
-  padding:15px 16px;
-  border-radius:18px;
-  background:rgba(255,255,255,.055);
-  border:1px solid rgba(255,255,255,.10);
-  color:#E9EFFF;
-  font-weight:850;
+  padding:15px 16px;border-radius:18px;background:rgba(255,255,255,.055);
+  border:1px solid rgba(255,255,255,.10);color:#E9EFFF;font-weight:850;
 }
 .vv-note{
-  margin-top:18px;
-  padding:18px;
-  border-radius:22px;
-  background:rgba(34,211,238,.08);
-  border:1px solid rgba(34,211,238,.20);
-  color:#DFF7FF;
-  line-height:1.65;
+  margin-top:18px;padding:18px;border-radius:22px;background:rgba(34,211,238,.08);
+  border:1px solid rgba(34,211,238,.20);color:#DFF7FF;line-height:1.65;
 }
-.vv-steps{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:18px;
-}
+.vv-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
 .vv-step-number{
-  width:46px;
-  height:46px;
-  display:grid;
-  place-items:center;
-  border-radius:50%;
-  background:linear-gradient(135deg,var(--vv-purple),var(--vv-cyan));
-  font-weight:950;
-  margin-bottom:14px;
+  width:46px;height:46px;display:grid;place-items:center;border-radius:50%;
+  background:linear-gradient(135deg,#7C3AED,#22D3EE);font-weight:950;margin-bottom:14px;
 }
-.vv-plan-grid{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:18px;
-}
-.vv-plan.featured{
-  border-color:rgba(34,211,238,.34);
-  box-shadow:0 20px 70px rgba(34,211,238,.16);
-}
-.vv-plan b{
-  font-size:26px;
-  display:block;
-  margin-bottom:12px;
-}
+.vv-plan-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.vv-plan.featured{border-color:rgba(34,211,238,.34);box-shadow:0 20px 70px rgba(34,211,238,.16)}
+.vv-plan b{font-size:26px;display:block;margin-bottom:12px}
 .vv-final{
-  text-align:center;
-  border-radius:36px;
-  padding:54px 28px;
+  text-align:center;border-radius:36px;padding:54px 28px;
   background:linear-gradient(135deg,rgba(124,58,237,.28),rgba(34,211,238,.14)),rgba(255,255,255,.04);
   border:1px solid rgba(255,255,255,.12);
 }
-.vv-final p{
-  max-width:780px;
-  margin:0 auto 26px;
-}
-#auth{
-  scroll-margin-top:90px;
-}
+.vv-final p{max-width:780px;margin:0 auto 26px}
 @media(max-width:980px){
   .vv-hero-grid,.vv-split,.vv-split.reverse{grid-template-columns:1fr}
   .vv-card-grid,.vv-steps,.vv-plan-grid{grid-template-columns:1fr 1fr}
@@ -360,18 +143,7 @@ body:has(#landing.vv-home){
 }
 @media(max-width:820px){
   .vv-mobile{display:inline-flex}
-  .vv-menu{
-    display:none;
-    position:absolute;
-    left:4vw;
-    right:4vw;
-    top:72px;
-    padding:16px;
-    border-radius:22px;
-    background:rgba(6,10,24,.98);
-    border:1px solid rgba(255,255,255,.12);
-    box-shadow:0 20px 70px rgba(0,0,0,.40);
-  }
+  .vv-menu{display:none;position:absolute;left:4vw;right:4vw;top:72px;padding:16px;border-radius:22px;background:rgba(6,10,24,.98);border:1px solid rgba(255,255,255,.12);box-shadow:0 20px 70px rgba(0,0,0,.40)}
   .vv-menu.open{display:grid}
   .vv-menu a,.vv-menu button{width:100%}
   .vv-hero{padding:44px 0}
@@ -387,48 +159,6 @@ body:has(#landing.vv-home){
 }
 </style>
 
-<style id="vozia-home-auth-fix-css">
-/* Correção: a home nova não pode quebrar os botões antigos do cadastro/login */
-.vv-home .vv-btn,
-.vv-nav .vv-btn{
-  display:inline-flex!important;
-  align-items:center;
-  justify-content:center;
-}
-
-/* Quando o usuário clica em "Criar cofre", forçamos a área antiga de cadastro/login a aparecer */
-body.home-open-auth #auth,
-body.home-open-auth section#auth{
-  display:block!important;
-  visibility:visible!important;
-  opacity:1!important;
-  height:auto!important;
-  max-height:none!important;
-  overflow:visible!important;
-}
-
-/* Restaura botões dentro do cadastro/login/app caso alguma classe global tenha afetado */
-#auth button,
-#auth .btn,
-#auth input[type="button"],
-#auth input[type="submit"],
-#app button,
-#app .btn{
-  visibility:visible!important;
-  opacity:1!important;
-  pointer-events:auto!important;
-}
-
-/* Garante que botão voltar/sair apareça em telas internas antigas */
-.top button,
-header button,
-nav button{
-  visibility:visible!important;
-  opacity:1!important;
-}
-</style>
-
-<link rel="stylesheet" href="/vozia-global-fix.css">
 </head>
 <body>
 
@@ -502,9 +232,9 @@ nav button{
         </p>
       </div>
       <div class="vv-card-grid">
-        <div class="vv-card"><div class="icon">🧠</div><h3>Doenças neurológicas e degenerativas</h3><p>Quando há risco de redução progressiva da fala, agir cedo permite preservar a voz e a forma única de se expressar.</p></div>
-        <div class="vv-card"><div class="icon">🏠</div><h3>Famílias e cuidadores</h3><p>O cofre organiza frases, mensagens e contatos autorizados para que a família saiba o que foi deixado pelo titular.</p></div>
-        <div class="vv-card"><div class="icon">🕊️</div><h3>Condições graves ou paliativas</h3><p>Para quem deseja deixar um recado importante mesmo sem completar todo o banco de voz.</p></div>
+        <div class="vv-card"><div class="vv-icon">🧠</div><h3>Doenças neurológicas e degenerativas</h3><p>Quando há risco de redução progressiva da fala, agir cedo permite preservar a voz e a forma única de se expressar.</p></div>
+        <div class="vv-card"><div class="vv-icon">🏠</div><h3>Famílias e cuidadores</h3><p>O cofre organiza frases, mensagens e contatos autorizados para que a família saiba o que foi deixado pelo titular.</p></div>
+        <div class="vv-card"><div class="vv-icon">🕊️</div><h3>Condições graves ou paliativas</h3><p>Para quem deseja deixar um recado importante mesmo sem completar todo o banco de voz.</p></div>
       </div>
     </div>
   </section>
@@ -605,7 +335,7 @@ nav button{
           O Vozia Vault une tecnologia, cuidado e família para ajudar pessoas que podem perder a fala
           a preservar sua voz, deixar mensagens importantes e encontrar novas formas de se comunicar.
         </p>
-        <button class="vv-btn" type="button" onclick="window.voziaIrParaCadastroDefinitivo && window.voziaIrParaCadastroDefinitivo();">Criar meu cofre agora</button>
+        <button class="vv-btn" type="button" id="finalCtaBtn">Criar meu cofre agora</button>
       </div>
     </div>
   </section>
@@ -906,91 +636,40 @@ document.addEventListener("DOMContentLoaded", function () {
 <script src="/supabase-flex-protocol.js"></script>
 <script src="/supabase-legacy-recorder-fix.js"></script>
 
-<script id="vozia-home-auth-fix-js">
-(function () {
-  function showEl(el) {
-    if (!el) return;
-    el.classList.remove("hidden");
-    el.removeAttribute("hidden");
-    el.style.display = "";
-    el.style.visibility = "visible";
-    el.style.opacity = "1";
-    el.style.maxHeight = "none";
-    el.style.overflow = "visible";
+<script id="vozia-home-only-js">
+(function(){
+  function abrirCadastro(){
+    var auth = document.getElementById("auth");
+    if(!auth) return;
+    auth.classList.remove("hidden");
+    auth.removeAttribute("hidden");
+    auth.style.display = "block";
+    auth.style.visibility = "visible";
+    auth.style.opacity = "1";
+    setTimeout(function(){
+      auth.scrollIntoView({behavior:"smooth", block:"start"});
+    }, 80);
   }
 
-  function abrirCadastro() {
-    document.body.classList.add("home-open-auth");
-
-    var auth = document.getElementById("auth");
-    showEl(auth);
-
-    // Restaura cartões comuns de cadastro/login sem depender do nome exato.
-    [
-      "signupCard",
-      "registerCard",
-      "loginCard",
-      "authCard",
-      "createVaultCard",
-      "forgotPasswordCard"
-    ].forEach(function (id) {
-      var el = document.getElementById(id);
-      if (el && id !== "forgotPasswordCard") showEl(el);
-    });
-
-    // Garante que botões dentro do auth não tenham ficado desabilitados visualmente.
-    if (auth) {
-      auth.querySelectorAll("button,input,select,textarea").forEach(function (el) {
-        el.style.visibility = "visible";
-        el.style.opacity = "1";
-        el.style.pointerEvents = "auto";
-      });
+  document.addEventListener("DOMContentLoaded", function(){
+    var menuBtn = document.getElementById("mobileMenuBtn");
+    var nav = document.getElementById("mainNav");
+    if(menuBtn && nav){
+      menuBtn.addEventListener("click", function(){ nav.classList.toggle("open"); });
     }
 
-    setTimeout(function () {
-      var target = auth || document.body;
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
-
-      var firstInput = target.querySelector('input:not([type="hidden"]), select, textarea');
-      if (firstInput && window.innerWidth > 760) {
-        setTimeout(function () {
-          try { firstInput.focus(); } catch(e) {}
-        }, 450);
-      }
-    }, 120);
-  }
-
-  window.voziaIrParaCadastro = abrirCadastro;
-  window.voziaAbrirCadastroHome = abrirCadastro;
-
-  function conectarBotoes() {
-    ["startBtn", "startBtn2"].forEach(function (id) {
+    ["startBtn","startBtn2","finalCtaBtn"].forEach(function(id){
       var btn = document.getElementById(id);
-      if (btn && !btn.dataset.voziaCadastroFix) {
-        btn.dataset.voziaCadastroFix = "1";
-        btn.addEventListener("click", function (ev) {
+      if(btn){
+        btn.addEventListener("click", function(ev){
           ev.preventDefault();
           abrirCadastro();
         });
       }
     });
-
-    document.querySelectorAll('[data-open-auth], .js-open-auth, a[href="#auth"]').forEach(function (btn) {
-      if (!btn.dataset.voziaCadastroFix) {
-        btn.dataset.voziaCadastroFix = "1";
-        btn.addEventListener("click", function (ev) {
-          ev.preventDefault();
-          abrirCadastro();
-        });
-      }
-    });
-  }
-
-  document.addEventListener("DOMContentLoaded", conectarBotoes);
-  document.addEventListener("click", function () {
-    setTimeout(conectarBotoes, 50);
-  }, true);
+  });
 })();
 </script>
 
-<script src="/vozia-global-fix.js"></script>
+</body>
+</html>
