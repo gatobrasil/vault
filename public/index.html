@@ -1,82 +1,91 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Vozia Vault | Preserve a voz antes que ela se perca</title>
-<link rel="
+<link rel="stylesheet" href="/style.css">
 <style>
-/* ============================================================
-   VOZIA VAULT — HOME EMOCIONAL V9
-   Somente página principal. Mantém app, login e Supabase.
-   ============================================================ */
-
-.vv-home{
-  background:
-    radial-gradient(circle at 15% 5%, rgba(109,92,255,.25), transparent 32%),
-    radial-gradient(circle at 85% 10%, rgba(30,182,255,.18), transparent 30%),
-    linear-gradient(135deg,#060816 0%,#081225 42%,#0b1024 100%);
-  color:#fff;
-  overflow:hidden;
+:root{
+  --vv-bg:#070B18;
+  --vv-bg2:#0B1329;
+  --vv-surface:rgba(255,255,255,.075);
+  --vv-border:rgba(255,255,255,.12);
+  --vv-text:#FFFFFF;
+  --vv-muted:#B8C3DA;
+  --vv-cyan:#22D3EE;
+  --vv-blue:#38BDF8;
+  --vv-purple:#7C3AED;
+  --vv-pink:#A78BFA;
 }
-
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--vv-bg);
+  color:var(--vv-text);
+  font-family:Inter,Arial,Helvetica,sans-serif;
+}
+body:has(#landing.vv-home){
+  background:
+    radial-gradient(circle at 10% 0%,rgba(124,58,237,.28),transparent 33%),
+    radial-gradient(circle at 90% 8%,rgba(34,211,238,.18),transparent 30%),
+    linear-gradient(135deg,#050713 0%,#071022 45%,#0b1024 100%);
+}
+.vv-home{
+  width:100%;
+  overflow:hidden;
+  color:#fff;
+}
+.vv-wrap{
+  width:min(1220px,92vw);
+  margin:0 auto;
+}
 .vv-nav{
   position:sticky;
   top:0;
-  z-index:30;
-  backdrop-filter:blur(18px);
-  background:rgba(5,9,20,.74);
-  border-bottom:1px solid rgba(255,255,255,.09);
+  z-index:50;
+  background:rgba(5,8,18,.82);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid rgba(255,255,255,.10);
 }
-
 .vv-nav-inner{
-  width:min(1220px,92%);
+  width:min(1220px,92vw);
   margin:0 auto;
   display:flex;
   align-items:center;
   justify-content:space-between;
   gap:18px;
-  padding:16px 0;
+  padding:18px 0;
 }
-
 .vv-brand{
   font-size:26px;
   font-weight:950;
-  letter-spacing:.14em;
-  line-height:1;
+  letter-spacing:.13em;
+  white-space:nowrap;
 }
-
-.vv-brand span{
-  color:#7dd3fc;
-}
-
+.vv-brand span{color:#7DD3FC}
 .vv-menu{
   display:flex;
   align-items:center;
   gap:18px;
   flex-wrap:wrap;
 }
-
 .vv-menu a{
-  color:#b9c2df;
+  color:#C5CEE3;
   text-decoration:none;
-  font-weight:850;
   font-size:14px;
+  font-weight:850;
 }
-
-.vv-menu a:hover{
-  color:#fff;
-}
-
+.vv-menu a:hover{color:#fff}
 .vv-mobile{
   display:none;
-  border:1px solid rgba(255,255,255,.18);
   background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.18);
   color:#fff;
   border-radius:14px;
   padding:10px 14px;
   font-weight:900;
 }
-
 .vv-btn{
   display:inline-flex;
   align-items:center;
@@ -85,499 +94,300 @@
   border:0;
   border-radius:16px;
   padding:14px 22px;
+  background:linear-gradient(135deg,var(--vv-purple),var(--vv-cyan));
+  color:#fff;
+  text-decoration:none;
   font-weight:950;
   cursor:pointer;
-  text-decoration:none;
-  color:#fff;
-  background:linear-gradient(135deg,#7c3aed,#22d3ee);
-  box-shadow:0 18px 45px rgba(34,211,238,.22);
+  box-shadow:0 18px 50px rgba(34,211,238,.22);
   transition:.22s ease;
 }
-
-.vv-btn:hover{
-  transform:translateY(-2px);
-  filter:brightness(1.06);
-}
-
+.vv-btn:hover{transform:translateY(-2px);filter:brightness(1.05)}
 .vv-btn-ghost{
   background:rgba(255,255,255,.07);
-  color:#fff;
   border:1px solid rgba(255,255,255,.14);
   box-shadow:none;
 }
-
-.vv-wrap{
-  width:min(1220px,92%);
-  margin:0 auto;
-}
-
 .vv-hero{
+  padding:78px 0 52px;
   position:relative;
-  padding:82px 0 70px;
 }
-
 .vv-hero-grid{
   display:grid;
-  grid-template-columns:1.02fr .98fr;
+  grid-template-columns:1fr 1fr;
   gap:48px;
   align-items:center;
 }
-
 .vv-kicker{
   display:inline-flex;
   align-items:center;
   gap:8px;
   border-radius:999px;
   padding:9px 14px;
+  background:rgba(34,211,238,.10);
   border:1px solid rgba(125,211,252,.28);
-  background:rgba(14,165,233,.10);
-  color:#dff7ff;
+  color:#E0F7FF;
   font-weight:900;
   margin-bottom:18px;
 }
-
 .vv-hero h1{
   font-size:clamp(42px,6vw,76px);
   line-height:.98;
-  letter-spacing:-.05em;
+  letter-spacing:-.055em;
   margin:0 0 22px;
-  max-width:800px;
 }
-
 .vv-gradient-text{
-  background:linear-gradient(135deg,#fff,#93c5fd 42%,#c4b5fd);
+  background:linear-gradient(135deg,#fff,#93C5FD 48%,#C4B5FD);
   -webkit-background-clip:text;
+  background-clip:text;
   color:transparent;
 }
-
 .vv-lead{
-  color:#c3cce4;
+  color:#C3CCE4;
   font-size:19px;
   line-height:1.65;
   max-width:720px;
   margin:0 0 26px;
 }
-
 .vv-actions{
   display:flex;
   gap:14px;
   flex-wrap:wrap;
   margin:28px 0 24px;
 }
-
 .vv-trust-row{
   display:grid;
   grid-template-columns:repeat(3,1fr);
   gap:12px;
-  max-width:760px;
 }
-
 .vv-trust{
-  border:1px solid rgba(255,255,255,.11);
-  background:rgba(255,255,255,.055);
-  border-radius:18px;
   padding:14px;
-  color:#e8edff;
+  border-radius:18px;
+  background:rgba(255,255,255,.055);
+  border:1px solid rgba(255,255,255,.11);
+  color:#EEF2FF;
   font-weight:850;
 }
-
-.vv-visual{
-  position:relative;
-}
-
+.vv-visual{position:relative}
 .vv-img-card{
-  position:relative;
   border-radius:34px;
   overflow:hidden;
   border:1px solid rgba(255,255,255,.12);
-  box-shadow:0 30px 80px rgba(0,0,0,.45);
-  background:#050816;
+  box-shadow:0 30px 90px rgba(0,0,0,.45);
+  background:#061021;
 }
-
 .vv-img-card img{
   display:block;
   width:100%;
-  min-height:520px;
+  height:560px;
   object-fit:cover;
 }
-
-.vv-img-card::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  background:linear-gradient(90deg,rgba(6,8,22,.18),transparent 40%);
-  pointer-events:none;
-}
-
 .vv-floating-card{
   position:absolute;
-  left:-28px;
-  bottom:28px;
+  left:-26px;
+  bottom:26px;
   max-width:330px;
   padding:18px;
   border-radius:24px;
-  background:rgba(8,12,28,.86);
-  border:1px solid rgba(125,211,252,.22);
+  background:rgba(8,12,28,.88);
+  border:1px solid rgba(125,211,252,.24);
   backdrop-filter:blur(14px);
-  box-shadow:0 20px 60px rgba(0,0,0,.34);
+  box-shadow:0 20px 60px rgba(0,0,0,.35);
 }
-
 .vv-floating-card strong{
   display:block;
   font-size:18px;
   margin-bottom:6px;
 }
-
-.vv-floating-card span{
-  color:#b8c5df;
-}
-
+.vv-floating-card span{color:#B8C5DF}
 .vv-strip{
   display:grid;
   grid-template-columns:repeat(4,1fr);
   gap:14px;
-  padding:22px 0 70px;
+  padding:20px 0 72px;
 }
-
 .vv-strip-item{
-  background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.045));
-  border:1px solid rgba(255,255,255,.10);
-  border-radius:24px;
   padding:22px;
+  border-radius:24px;
+  background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.04));
+  border:1px solid rgba(255,255,255,.10);
 }
-
 .vv-strip-item b{
   display:block;
   font-size:22px;
   margin-bottom:4px;
 }
-
-.vv-strip-item span{
-  color:#b9c2dc;
-}
-
+.vv-strip-item span{color:#B9C2DC}
 .vv-section{
   padding:86px 0;
-  position:relative;
 }
-
 .vv-section-soft{
   background:rgba(255,255,255,.025);
   border-top:1px solid rgba(255,255,255,.07);
   border-bottom:1px solid rgba(255,255,255,.07);
 }
-
 .vv-head{
-  max-width:850px;
-  margin:0 auto 42px;
   text-align:center;
+  max-width:860px;
+  margin:0 auto 42px;
 }
-
-.vv-head h2,
-.vv-split h2{
-  font-size:clamp(32px,4vw,52px);
+.vv-head h2,.vv-split h2,.vv-final h2{
+  font-size:clamp(32px,4vw,54px);
   line-height:1.06;
-  letter-spacing:-.035em;
+  letter-spacing:-.04em;
   margin:0 0 16px;
 }
-
-.vv-head p,
-.vv-split p{
-  color:#c2cbe2;
+.vv-head p,.vv-split p,.vv-final p{
+  color:#C2CBE2;
   font-size:18px;
   line-height:1.7;
 }
-
 .vv-card-grid{
   display:grid;
   grid-template-columns:repeat(3,1fr);
   gap:18px;
 }
-
-.vv-card{
+.vv-card,.vv-step,.vv-plan{
   border:1px solid rgba(255,255,255,.10);
   background:linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,.035));
   border-radius:28px;
   padding:26px;
   box-shadow:0 18px 50px rgba(0,0,0,.20);
 }
-
 .vv-card .icon{
   font-size:30px;
   margin-bottom:12px;
 }
-
-.vv-card h3{
+.vv-card h3,.vv-step h3,.vv-plan h3{
   margin:0 0 10px;
   font-size:22px;
 }
-
-.vv-card p{
-  color:#bbc5dc;
-  line-height:1.65;
+.vv-card p,.vv-step p,.vv-plan p{
   margin:0;
+  color:#BBC5DC;
+  line-height:1.65;
 }
-
 .vv-split{
   display:grid;
-  grid-template-columns:.92fr 1.08fr;
+  grid-template-columns:.95fr 1.05fr;
   gap:46px;
   align-items:center;
 }
-
-.vv-split.reverse{
-  grid-template-columns:1.08fr .92fr;
-}
-
+.vv-split.reverse{grid-template-columns:1.05fr .95fr}
 .vv-split-img{
   border-radius:32px;
   overflow:hidden;
   border:1px solid rgba(255,255,255,.11);
   box-shadow:0 30px 80px rgba(0,0,0,.38);
 }
-
 .vv-split-img img{
   display:block;
   width:100%;
-  min-height:430px;
+  height:450px;
   object-fit:cover;
 }
-
 .vv-list{
   display:grid;
   gap:12px;
   margin-top:22px;
 }
-
 .vv-list div{
-  border:1px solid rgba(255,255,255,.10);
-  background:rgba(255,255,255,.055);
-  border-radius:18px;
   padding:15px 16px;
-  color:#e9efff;
-  font-weight:800;
+  border-radius:18px;
+  background:rgba(255,255,255,.055);
+  border:1px solid rgba(255,255,255,.10);
+  color:#E9EFFF;
+  font-weight:850;
 }
-
 .vv-note{
   margin-top:18px;
   padding:18px;
   border-radius:22px;
   background:rgba(34,211,238,.08);
   border:1px solid rgba(34,211,238,.20);
-  color:#dff7ff;
+  color:#DFF7FF;
+  line-height:1.65;
 }
-
 .vv-steps{
   display:grid;
   grid-template-columns:repeat(4,1fr);
   gap:18px;
 }
-
-.vv-step{
-  position:relative;
-  padding:24px;
-  border-radius:26px;
-  border:1px solid rgba(255,255,255,.10);
-  background:rgba(255,255,255,.055);
-}
-
 .vv-step-number{
   width:46px;
   height:46px;
   display:grid;
   place-items:center;
   border-radius:50%;
-  background:linear-gradient(135deg,#7c3aed,#22d3ee);
+  background:linear-gradient(135deg,var(--vv-purple),var(--vv-cyan));
   font-weight:950;
   margin-bottom:14px;
 }
-
-.vv-step h3{
-  font-size:20px;
-  margin:0 0 8px;
-}
-
-.vv-step p{
-  color:#bbc5dc;
-  margin:0;
-  line-height:1.6;
-}
-
 .vv-plan-grid{
   display:grid;
   grid-template-columns:repeat(3,1fr);
   gap:18px;
 }
-
-.vv-plan{
-  border-radius:30px;
-  border:1px solid rgba(255,255,255,.12);
-  background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.04));
-  padding:28px;
-}
-
 .vv-plan.featured{
   border-color:rgba(34,211,238,.34);
   box-shadow:0 20px 70px rgba(34,211,238,.16);
 }
-
-.vv-plan h3{
-  font-size:24px;
-  margin:0 0 8px;
-}
-
 .vv-plan b{
   font-size:26px;
   display:block;
   margin-bottom:12px;
 }
-
-.vv-plan p{
-  color:#c1cadf;
-  line-height:1.65;
-}
-
 .vv-final{
   text-align:center;
   border-radius:36px;
   padding:54px 28px;
-  background:
-    linear-gradient(135deg,rgba(124,58,237,.28),rgba(34,211,238,.14)),
-    rgba(255,255,255,.04);
+  background:linear-gradient(135deg,rgba(124,58,237,.28),rgba(34,211,238,.14)),rgba(255,255,255,.04);
   border:1px solid rgba(255,255,255,.12);
 }
-
-.vv-final h2{
-  font-size:clamp(34px,5vw,58px);
-  line-height:1.05;
-  margin:0 0 16px;
-}
-
 .vv-final p{
-  color:#d3dcf2;
-  max-width:760px;
+  max-width:780px;
   margin:0 auto 26px;
-  font-size:18px;
-  line-height:1.7;
 }
-
-/* Ajustes para não quebrar a área de cadastro/app antigo */
-#auth,
-#app{
-  position:relative;
-  z-index:2;
+#auth{
+  scroll-margin-top:90px;
 }
-
 @media(max-width:980px){
-  .vv-hero-grid,
-  .vv-split,
-  .vv-split.reverse{
-    grid-template-columns:1fr;
-  }
-
-  .vv-card-grid,
-  .vv-steps,
-  .vv-plan-grid{
-    grid-template-columns:1fr 1fr;
-  }
-
-  .vv-strip{
-    grid-template-columns:1fr 1fr;
-  }
-
-  .vv-img-card img{
-    min-height:420px;
-  }
-
-  .vv-floating-card{
-    position:relative;
-    left:0;
-    bottom:0;
-    margin-top:14px;
-    max-width:100%;
-  }
+  .vv-hero-grid,.vv-split,.vv-split.reverse{grid-template-columns:1fr}
+  .vv-card-grid,.vv-steps,.vv-plan-grid{grid-template-columns:1fr 1fr}
+  .vv-strip{grid-template-columns:1fr 1fr}
+  .vv-img-card img{height:460px}
+  .vv-floating-card{position:relative;left:0;bottom:0;margin-top:14px;max-width:100%}
 }
-
 @media(max-width:820px){
-  .vv-mobile{
-    display:inline-flex;
-  }
-
+  .vv-mobile{display:inline-flex}
   .vv-menu{
     display:none;
     position:absolute;
-    left:4%;
-    right:4%;
-    top:70px;
+    left:4vw;
+    right:4vw;
+    top:72px;
     padding:16px;
     border-radius:22px;
-    background:rgba(6,10,24,.96);
+    background:rgba(6,10,24,.98);
     border:1px solid rgba(255,255,255,.12);
     box-shadow:0 20px 70px rgba(0,0,0,.40);
   }
-
-  .vv-menu.open{
-    display:grid;
-  }
-
-  .vv-menu a,
-  .vv-menu button{
-    width:100%;
-  }
-
-  .vv-hero{
-    padding:44px 0 46px;
-  }
-
-  .vv-hero h1{
-    font-size:42px;
-  }
-
-  .vv-lead{
-    font-size:17px;
-  }
-
-  .vv-trust-row,
-  .vv-card-grid,
-  .vv-steps,
-  .vv-plan-grid,
-  .vv-strip{
-    grid-template-columns:1fr;
-  }
-
-  .vv-split-img img{
-    min-height:320px;
-  }
+  .vv-menu.open{display:grid}
+  .vv-menu a,.vv-menu button{width:100%}
+  .vv-hero{padding:44px 0}
+  .vv-hero h1{font-size:38px}
+  .vv-lead{font-size:17px}
+  .vv-trust-row,.vv-card-grid,.vv-steps,.vv-plan-grid,.vv-strip{grid-template-columns:1fr}
+  .vv-split-img img,.vv-img-card img{height:330px}
 }
-
 @media(max-width:480px){
-  .vv-brand{
-    font-size:21px;
-  }
-
-  .vv-hero h1{
-    font-size:36px;
-  }
-
-  .vv-actions{
-    display:grid;
-  }
-
-  .vv-btn{
-    width:100%;
-  }
+  .vv-brand{font-size:21px}
+  .vv-actions{display:grid}
+  .vv-btn{width:100%}
 }
 </style>
-
-stylesheet" href="/style.css">
 </head>
 <body>
-<header class="top">
-  <div class="brand">VOZIA <span>VAULT</span></div>
-  <nav><button id="dataBtn" class="ghost hidden">Meus dados</button><button id="logoutBtn" class="ghost hidden">Sair</button></nav>
-</header>
-
-
 
 <section id="landing" class="vv-home">
   <header class="vv-nav">
@@ -607,20 +417,17 @@ stylesheet" href="/style.css">
           neurológicas ou condições graves. Grave frases, preserve a identidade vocal e deixe mensagens
           especiais para familiares.
         </p>
-
         <div class="vv-actions">
           <button id="startBtn2" class="vv-btn" type="button">Criar cofre de voz</button>
           <a href="#mensagens" class="vv-btn vv-btn-ghost">Entender mensagens familiares</a>
           <a href="#vozia-care" class="vv-btn vv-btn-ghost">Conhecer Vozia Care</a>
         </div>
-
         <div class="vv-trust-row">
           <div class="vv-trust">💙 Preserve a voz enquanto ainda é possível</div>
           <div class="vv-trust">💌 Deixe recados para filhos, netos e familiares</div>
           <div class="vv-trust">📱 Transforme frases em comunicação diária</div>
         </div>
       </div>
-
       <div class="vv-visual">
         <div class="vv-img-card">
           <img src="/img/vozia-hero-homem.png" alt="Pessoa idosa e familiar usando tecnologia para preservar a voz">
@@ -634,22 +441,10 @@ stylesheet" href="/style.css">
   </section>
 
   <section class="vv-wrap vv-strip" id="beneficios">
-    <div class="vv-strip-item">
-      <b>Banco de voz</b>
-      <span>Frases gravadas para preservar identidade vocal.</span>
-    </div>
-    <div class="vv-strip-item">
-      <b>Legado familiar</b>
-      <span>Mensagens importantes para pessoas autorizadas.</span>
-    </div>
-    <div class="vv-strip-item">
-      <b>Revisão anual</b>
-      <span>Todo 1º de janeiro, conforme regras aceitas no cadastro.</span>
-    </div>
-    <div class="vv-strip-item">
-      <b>Vozia Care</b>
-      <span>Oferta de comunicação assistiva para uso diário.</span>
-    </div>
+    <div class="vv-strip-item"><b>Banco de voz</b><span>Frases gravadas para preservar identidade vocal.</span></div>
+    <div class="vv-strip-item"><b>Legado familiar</b><span>Mensagens importantes para pessoas autorizadas.</span></div>
+    <div class="vv-strip-item"><b>Revisão anual</b><span>Todo 1º de janeiro, conforme regras aceitas no cadastro.</span></div>
+    <div class="vv-strip-item"><b>Vozia Care</b><span>Oferta de comunicação assistiva para uso diário.</span></div>
   </section>
 
   <section id="quem-e" class="vv-section vv-section-soft">
@@ -658,28 +453,15 @@ stylesheet" href="/style.css">
         <div class="vv-kicker">Para quem é</div>
         <h2>Criado para pessoas que podem perder a fala.</h2>
         <p>
-          O Vozia Vault foi pensado para pacientes com doenças ou condições que podem comprometer a comunicação,
-          como ELA, Parkinson avançado, AVC, doenças neuromusculares, câncer avançado, demências iniciais
-          e outras condições progressivas.
+          Pensado para pacientes com doenças ou condições que podem comprometer a comunicação,
+          como ELA, Parkinson avançado, AVC, doenças neuromusculares, câncer avançado,
+          demências iniciais e outras condições progressivas.
         </p>
       </div>
-
       <div class="vv-card-grid">
-        <div class="vv-card">
-          <div class="icon">🧠</div>
-          <h3>Doenças neurológicas e degenerativas</h3>
-          <p>Quando existe risco de redução progressiva da fala, agir cedo permite preservar a voz e a forma única de se expressar.</p>
-        </div>
-        <div class="vv-card">
-          <div class="icon">🏠</div>
-          <h3>Famílias e cuidadores</h3>
-          <p>O cofre organiza frases, mensagens e contatos autorizados para que a família saiba o que foi deixado pelo titular.</p>
-        </div>
-        <div class="vv-card">
-          <div class="icon">🕊️</div>
-          <h3>Condições graves ou paliativas</h3>
-          <p>Para quem deseja deixar um recado importante mesmo sem completar todo o banco de voz.</p>
-        </div>
+        <div class="vv-card"><div class="icon">🧠</div><h3>Doenças neurológicas e degenerativas</h3><p>Quando há risco de redução progressiva da fala, agir cedo permite preservar a voz e a forma única de se expressar.</p></div>
+        <div class="vv-card"><div class="icon">🏠</div><h3>Famílias e cuidadores</h3><p>O cofre organiza frases, mensagens e contatos autorizados para que a família saiba o que foi deixado pelo titular.</p></div>
+        <div class="vv-card"><div class="icon">🕊️</div><h3>Condições graves ou paliativas</h3><p>Para quem deseja deixar um recado importante mesmo sem completar todo o banco de voz.</p></div>
       </div>
     </div>
   </section>
@@ -689,26 +471,23 @@ stylesheet" href="/style.css">
       <div class="vv-split-img">
         <img src="/img/vozia-hero-familia.png" alt="Familiar e paciente usando tablet para guardar mensagens de voz">
       </div>
-
       <div>
         <div class="vv-kicker">Mensagens para o futuro</div>
         <h2>Um cofre de mensagens para quem você ama.</h2>
         <p>
-          Além do banco de voz, o paciente pode gravar mensagens de legado para familiares.
-          Pode ser um recado para filhos, netos, cônjuge, amigos ou pessoas importantes.
+          Além do banco de voz, o paciente pode gravar mensagens de legado para familiares:
+          recados para filhos, netos, cônjuge, amigos ou pessoas importantes.
         </p>
         <p>
           Essas mensagens ficam protegidas e vinculadas ao responsável autorizado indicado no cadastro.
           O objetivo é guardar com dignidade aquilo que talvez precise ser ouvido no momento certo.
         </p>
-
         <div class="vv-list">
           <div>💌 Mensagem prioritária para família</div>
           <div>🎙️ Recados em áudio com a própria voz</div>
           <div>👨‍👩‍👧 Responsável familiar autorizado</div>
           <div>🔒 Liberação conforme condições aceitas no cadastro</div>
         </div>
-
         <div class="vv-note">
           Todos os anos, no dia <b>1º de janeiro</b>, a plataforma realiza uma revisão dos cofres ativos.
           Em caso de falecimento confirmado do titular, a equipe entra em contato com o familiar autorizado
@@ -731,15 +510,13 @@ stylesheet" href="/style.css">
           O paciente pode usar botões com frases importantes, mensagens gravadas e recursos personalizados
           para expressar necessidades, sentimentos e pedidos de ajuda.
         </p>
-
         <div class="vv-list">
           <div>📱 Botões com frases essenciais</div>
           <div>🔊 Uso de áudios gravados pelo próprio paciente</div>
           <div>⌨️ Teclado ativo e voz sintética próxima mediante upgrade</div>
-          <div>🏥 Possível uso em casa, clínica, hospital e rotina de cuidado</div>
+          <div>🏥 Uso em casa, clínica, hospital e rotina de cuidado</div>
         </div>
       </div>
-
       <div class="vv-split-img">
         <img src="/img/vozia-hero-homem.png" alt="Família usando Vozia Care para comunicação assistiva">
       </div>
@@ -751,33 +528,13 @@ stylesheet" href="/style.css">
       <div class="vv-head">
         <div class="vv-kicker">Como funciona</div>
         <h2>Uma jornada simples, guiada e humana.</h2>
-        <p>
-          O contrato e as permissões são aceitos no cadastro. Depois, o paciente segue por etapas:
-          banco de voz, mensagem familiar e solicitação do Vozia Care.
-        </p>
+        <p>O contrato e as permissões são aceitos no cadastro. Depois, o paciente segue por etapas.</p>
       </div>
-
       <div class="vv-steps">
-        <div class="vv-step">
-          <div class="vv-step-number">1</div>
-          <h3>Crie o cofre</h3>
-          <p>Cadastre o titular, plano e familiar autorizado.</p>
-        </div>
-        <div class="vv-step">
-          <div class="vv-step-number">2</div>
-          <h3>Grave a voz</h3>
-          <p>Registre frases para preservar a identidade vocal.</p>
-        </div>
-        <div class="vv-step">
-          <div class="vv-step-number">3</div>
-          <h3>Deixe mensagens</h3>
-          <p>Grave recados para familiares, mesmo sem completar todas as frases.</p>
-        </div>
-        <div class="vv-step">
-          <div class="vv-step-number">4</div>
-          <h3>Solicite Vozia Care</h3>
-          <p>Use a voz preservada em comunicação assistiva.</p>
-        </div>
+        <div class="vv-step"><div class="vv-step-number">1</div><h3>Crie o cofre</h3><p>Cadastre o titular, plano e familiar autorizado.</p></div>
+        <div class="vv-step"><div class="vv-step-number">2</div><h3>Grave a voz</h3><p>Registre frases para preservar a identidade vocal.</p></div>
+        <div class="vv-step"><div class="vv-step-number">3</div><h3>Deixe mensagens</h3><p>Grave recados para familiares, mesmo sem completar todas as frases.</p></div>
+        <div class="vv-step"><div class="vv-step-number">4</div><h3>Solicite Vozia Care</h3><p>Use a voz preservada em comunicação assistiva.</p></div>
       </div>
     </div>
   </section>
@@ -787,27 +544,12 @@ stylesheet" href="/style.css">
       <div class="vv-head">
         <div class="vv-kicker">Planos</div>
         <h2>Comece pelo essencial. Evolua quando precisar.</h2>
-        <p>
-          O plano ideal depende da urgência, do objetivo familiar e do nível de preservação vocal desejado.
-        </p>
+        <p>O plano ideal depende da urgência, do objetivo familiar e do nível de preservação vocal desejado.</p>
       </div>
-
       <div class="vv-plan-grid">
-        <div class="vv-plan">
-          <h3>Avaliação</h3>
-          <b>7 dias</b>
-          <p>10 frases, 1 mensagem de legado e acesso inicial para testar o protocolo. Não inclui backup completo.</p>
-        </div>
-        <div class="vv-plan featured">
-          <h3>Anual</h3>
-          <b>Completo</b>
-          <p>100 frases, mensagens de legado, cofre organizado e possibilidade de solicitar Vozia Care com botões de voz gravada.</p>
-        </div>
-        <div class="vv-plan">
-          <h3>Vitalício</h3>
-          <b>Premium</b>
-          <p>Preservação estendida, mensagens ampliadas, prioridade em tecnologias futuras e suporte mais próximo.</p>
-        </div>
+        <div class="vv-plan"><h3>Avaliação</h3><b>7 dias</b><p>10 frases, 1 mensagem de legado e acesso inicial para testar o protocolo. Não inclui backup completo.</p></div>
+        <div class="vv-plan featured"><h3>Anual</h3><b>Completo</b><p>100 frases, mensagens de legado, cofre organizado e possibilidade de solicitar Vozia Care com botões de voz gravada.</p></div>
+        <div class="vv-plan"><h3>Vitalício</h3><b>Premium</b><p>Preservação estendida, mensagens ampliadas, prioridade em tecnologias futuras e suporte mais próximo.</p></div>
       </div>
     </div>
   </section>
@@ -825,6 +567,7 @@ stylesheet" href="/style.css">
     </div>
   </section>
 </section>
+
 
 <section id="auth" class="container hidden">
   <div class="grid">
@@ -1119,20 +862,3 @@ document.addEventListener("DOMContentLoaded", function () {
 <script src="/supabase-iphone-audio-fix.js"></script>
 <script src="/supabase-flex-protocol.js"></script>
 <script src="/supabase-legacy-recorder-fix.js"></script>
-
-<script data-home-scroll-v9="1">
-document.addEventListener("DOMContentLoaded", function () {
-  ["startBtn","startBtn2"].forEach(function(id){
-    const b = document.getElementById(id);
-    if (b && !b.dataset.homeScroll) {
-      b.dataset.homeScroll = "1";
-      b.addEventListener("click", function(){
-        document.getElementById("auth")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
-    }
-  });
-});
-</script>
-
-</body>
-</html>
