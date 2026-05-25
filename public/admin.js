@@ -1,11 +1,9 @@
 // ============================================================
-// VOZIA ADMIN COMPLETO MELHORADO
-// - Busca geral de paciente
-// - Perfil detalhado por user_id real
-// - Backup individual completo
-// - Backup geral da plataforma
-// - Solicitações de exclusão no admin
-// Não mexe no login/painel do paciente.
+// VOZIA ADMIN — Auth email + perfil completo + backup
+// - Identifica paciente pelo user_id real
+// - Mostra e-mail real do Auth quando a RPC existir
+// - Mostra todos os campos do cadastro/profile
+// - Backup individual e geral
 // ============================================================
 
 const $ = (id) => document.getElementById(id);
@@ -118,10 +116,22 @@ function userById(userId) {
   return adminUsers.find(u => u.id === userId);
 }
 
+function getAuthEmail(u) {
+  return u?.auth_email || u?.login_email || u?.email_auth || "";
+}
+
+function getProfileEmail(u) {
+  return u?.profile_email || u?.email || "";
+}
+
+function getBestEmail(u) {
+  return getAuthEmail(u) || getProfileEmail(u) || "";
+}
+
 function userDisplayName(userId) {
   const u = userById(userId);
   if (!u) return userId || "-";
-  return `${u.name || "Sem nome"} — ${u.email || ""}`;
+  return `${u.name || "Sem nome"} — ${getBestEmail(u) || ""}`;
 }
 
 function getUserRows(userId) {
@@ -142,6 +152,29 @@ function getUserCounts(userId) {
     care: rows.care.length,
     deletion: rows.deletion.length
   };
+}
+
+function contactFields(u) {
+  const keys = Object.keys(u || {});
+  const contactLike = keys.filter(k => {
+    const s = k.toLowerCase();
+    return (
+      s.includes("contact") ||
+      s.includes("contato") ||
+      s.includes("family") ||
+      s.includes("familiar") ||
+      s.includes("respons") ||
+      s.includes("phone") ||
+      s.includes("telefone") ||
+      s.includes("whatsapp") ||
+      s.includes("email_") ||
+      s.includes("authorized")
+    );
+  });
+
+  return contactLike
+    .map(k => [k, u[k]])
+    .filter(([k,v]) => v !== null && v !== undefined && String(v).trim() !== "");
 }
 
 function profileSearchText(u) {
@@ -193,6 +226,37 @@ async function adminCheck() {
   await adminLoadAll();
 }
 
+async function fetchProfilesWithAuthEmail(sb) {
+  // Preferido: RPC segura que junta profiles + auth.users.email.
+  // Precisa rodar o SQL deste pacote.
+  try {
+    const { data, error } = await sb.rpc("admin_patient_directory");
+    if (!error && Array.isArray(data)) {
+      return data.map(row => ({
+        ...(row.profile_json || {}),
+        ...row,
+        email: row.profile_email || row.email || "",
+        profile_email: row.profile_email || row.email || "",
+        auth_email: row.auth_email || null
+      }));
+    }
+    console.warn("RPC admin_patient_directory indisponível, usando profiles.", error);
+  } catch (e) {
+    console.warn("RPC admin_patient_directory erro, usando profiles.", e);
+  }
+
+  const { data, error } = await sb.from("profiles").select("*").order("created_at", { ascending: false }).limit(10000);
+  if (error) throw error;
+
+  // fallback: deixa claro que email é o profile.email, não Auth.
+  return (data || []).map(p => ({
+    ...p,
+    profile_email: p.email,
+    auth_email: null,
+    auth_email_unavailable: true
+  }));
+}
+
 async function fetchOptionalTable(sb, table) {
   const { data, error } = await sb.from(table).select("*").order("created_at", { ascending: false }).limit(10000);
   if (error) {
@@ -213,7 +277,7 @@ async function adminLoadAll() {
     adminMsg("Carregando dados...", true);
 
     const [profiles, recs, legacy, care, deletion] = await Promise.all([
-      fetchOptionalTable(sb, "profiles"),
+      fetchProfilesWithAuthEmail(sb),
       fetchOptionalTable(sb, "recordings"),
       fetchOptionalTable(sb, "legacy_messages"),
       fetchOptionalTable(sb, "vozia_care_requests"),
@@ -230,7 +294,7 @@ async function adminLoadAll() {
     adminRender();
 
     adminMsg("Dados atualizados.", true);
-    setTimeout(() => { if ($("adminMsg")) $("adminMsg").style.display = "none"; }, 1200);
+    setTimeout(() => { if ($("adminMsg")) $("adminMsg").style.display = "none"; }, 1400);
   } catch (e) {
     console.error(e);
     adminMsg("Erro ao carregar dados. Rode o SQL do admin. Detalhe: " + (e.message || "erro"));
@@ -276,15 +340,19 @@ function renderUsers() {
 
   box.innerHTML = rows.map(u => {
     const c = getUserCounts(u.id);
-    const contactGuess = u.contact_email || u.family_email || u.responsible_email || u.authorized_contact_email || u.contact_phone || u.phone || "";
+    const authEmail = getAuthEmail(u);
+    const profileEmail = getProfileEmail(u);
+    const contacts = contactFields(u);
+
     return `
       <div class="adminPatientCard">
         <div class="adminPatientHeader">
           <div>
             <b>${escapeHtml(u.name || "Sem nome")}</b>
             <p class="small">
-              <b>E-mail do paciente/login:</b> ${escapeHtml(u.email || "")}<br>
-              ${contactGuess ? `<b>Contato/familiar informado:</b> ${escapeHtml(contactGuess)}<br>` : ""}
+              <b>E-mail real do login/Auth:</b> ${authEmail ? escapeHtml(authEmail) : "<span class='adminDanger'>não disponível — rode o SQL novo</span>"}<br>
+              <b>E-mail salvo no cadastro/profile:</b> ${escapeHtml(profileEmail || "")}<br>
+              ${contacts.length ? `<b>Contatos do cadastro:</b> ${contacts.map(([k,v]) => `${escapeHtml(k)}: ${escapeHtml(v)}`).join(" • ")}<br>` : ""}
               <b>User ID:</b> <span class="adminSmallMuted">${escapeHtml(u.id || "")}</span><br>
               Plano: ${escapeHtml(u.plan || "avaliacao")} • Cofre: ${escapeHtml(u.vault_id || "")}<br>
               Criado em: ${u.created_at ? new Date(u.created_at).toLocaleString("pt-BR") : "-"}
@@ -368,7 +436,7 @@ function renderDeletionRequests() {
     const u = userById(r.user_id);
     return `
       <div class="dataItem">
-        <b>${escapeHtml(u?.name || "Paciente")} — ${escapeHtml(u?.email || r.user_id || "")}</b>
+        <b>${escapeHtml(u?.name || "Paciente")} — ${escapeHtml(getBestEmail(u) || r.user_id || "")}</b>
         <p class="small">
           <b>User ID:</b> <span class="adminSmallMuted">${escapeHtml(r.user_id || "")}</span><br>
           Status: ${escapeHtml(r.status || "pendente")}<br>
@@ -395,15 +463,36 @@ function openPatientDetail(userId) {
 
   box.classList.remove("hidden");
 
+  const authEmail = getAuthEmail(u);
+  const profileEmail = getProfileEmail(u);
+  const contacts = contactFields(u);
+
   const allProfileFields = Object.entries(u)
-    .map(([k,v]) => `<div><b>${escapeHtml(k)}</b><br><span class="adminSmallMuted">${escapeHtml(v ?? "")}</span></div>`)
+    .sort(([a],[b]) => a.localeCompare(b))
+    .map(([k,v]) => {
+      const important = ["auth_email", "profile_email", "email", "name", "phone", "contact_email", "family_email", "responsible_email", "authorized_contact_email", "contact_phone", "vault_id", "plan"].includes(k);
+      return `<div style="${important ? "border-color:rgba(34,211,238,.35);" : ""}">
+        <b>${escapeHtml(k)}</b><br>
+        <span class="adminSmallMuted">${escapeHtml(v ?? "")}</span>
+      </div>`;
+    })
     .join("");
 
   box.innerHTML = `
     <h2>Perfil completo do paciente</h2>
     <p class="small">
-      Este perfil está vinculado ao <b>user_id real</b> do Supabase: <span class="adminSmallMuted">${escapeHtml(userId)}</span>
+      Este perfil está vinculado ao <b>user_id real</b>: <span class="adminSmallMuted">${escapeHtml(userId)}</span>
     </p>
+
+    <div class="noticeBox">
+      <b>E-mail real do login/Auth:</b> ${authEmail ? escapeHtml(authEmail) : "não disponível — rode o SQL novo"}<br>
+      <b>E-mail salvo no cadastro/profile:</b> ${escapeHtml(profileEmail || "")}<br>
+      ${
+        contacts.length
+          ? `<b>Contatos familiares/cadastro:</b><br>${contacts.map(([k,v]) => `${escapeHtml(k)}: ${escapeHtml(v)}`).join("<br>")}`
+          : "Nenhum campo de contato familiar identificado no profile."
+      }
+    </div>
 
     <div class="adminMiniGrid">
       <div><b>${rows.recordings.length}</b><br><span class="small">frases</span></div>
@@ -418,7 +507,7 @@ function openPatientDetail(userId) {
       <button type="button" class="ghost" onclick="backupPatientJson('${escapeAttr(userId)}')">Baixar manifesto JSON</button>
     </div>
 
-    <h3>Dados do cadastro</h3>
+    <h3>Todos os campos do cadastro/profile</h3>
     <div class="adminDetailGrid">${allProfileFields}</div>
 
     <h3>Mensagens familiares</h3>
@@ -514,7 +603,7 @@ function patientManifest(userId) {
   const rows = getUserRows(userId);
   return {
     generated_at: new Date().toISOString(),
-    identity_note: "Paciente identificado pelo profile.id/user_id do Supabase Auth. Emails de contato familiar são apenas campos do cadastro.",
+    identity_note: "Paciente identificado pelo profile.id/user_id do Supabase Auth. auth_email é o email real do Auth quando disponível. profile_email/email são campos salvos no cadastro.",
     profile: rows.profile,
     recordings: rows.recordings,
     legacy_messages: rows.legacy,
@@ -536,7 +625,7 @@ function platformManifest() {
 
 async function backupPatientJson(userId) {
   const manifest = patientManifest(userId);
-  const name = safeFile(manifest.profile?.email || manifest.profile?.name || userId);
+  const name = safeFile(getBestEmail(manifest.profile) || manifest.profile?.name || userId);
   downloadText(`manifesto-vozia-${name}.json`, JSON.stringify(manifest, null, 2), "application/json");
 }
 
@@ -546,7 +635,7 @@ async function backupPatientZip(userId, existingZipRoot = null) {
   if (!profile) throw new Error("Paciente não encontrado.");
 
   const zip = existingZipRoot ? null : new JSZip();
-  const root = existingZipRoot || zip.folder(safeFile(profile.email || profile.name || userId));
+  const root = existingZipRoot || zip.folder(safeFile(getBestEmail(profile) || profile.name || userId));
   root.file("manifesto-paciente.json", JSON.stringify(manifest, null, 2));
 
   const voiceFolder = root.folder("banco-de-voz");
@@ -588,7 +677,7 @@ async function backupPatientZip(userId, existingZipRoot = null) {
 
   if (!existingZipRoot) {
     const zipBlob = await zip.generateAsync({ type: "blob" });
-    downloadBlob(`backup-vozia-${safeFile(profile.email || profile.name || userId)}.zip`, zipBlob);
+    downloadBlob(`backup-vozia-${safeFile(getBestEmail(profile) || profile.name || userId)}.zip`, zipBlob);
   }
 }
 
@@ -606,8 +695,8 @@ async function backupAllPlatformZip() {
     let i = 0;
     for (const u of adminUsers) {
       i++;
-      progress(`Gerando backup ${i}/${adminUsers.length}: ${u.email || u.name || u.id}`);
-      const folder = zip.folder(safeFile(u.email || u.name || u.id));
+      progress(`Gerando backup ${i}/${adminUsers.length}: ${getBestEmail(u) || u.name || u.id}`);
+      const folder = zip.folder(safeFile(getBestEmail(u) || u.name || u.id));
       await backupPatientZip(u.id, folder);
     }
 
@@ -626,10 +715,10 @@ function backupAllJson() {
 }
 
 function backupPatientsCsv() {
-  const rows = [["user_id","nome","email_login_paciente","plano","vault_id","frases","mensagens","care","exclusao","created_at"]];
+  const rows = [["user_id","nome","email_auth_login","email_profile_cadastro","plano","vault_id","frases","mensagens","care","exclusao","created_at"]];
   adminUsers.forEach(u => {
     const c = getUserCounts(u.id);
-    rows.push([u.id || "", u.name || "", u.email || "", u.plan || "", u.vault_id || "", c.recordings, c.legacy, c.care, c.deletion, u.created_at || ""]);
+    rows.push([u.id || "", u.name || "", getAuthEmail(u) || "", getProfileEmail(u) || "", u.plan || "", u.vault_id || "", c.recordings, c.legacy, c.care, c.deletion, u.created_at || ""]);
   });
   const csv = rows.map(r => r.map(v => `"${String(v).replaceAll('"','""')}"`).join(",")).join("\n");
   downloadText(`pacientes-vozia-${new Date().toISOString().slice(0,10)}.csv`, csv, "text/csv");
