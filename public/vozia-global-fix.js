@@ -43,3 +43,163 @@
   document.addEventListener("click",function(){setTimeout(run,80);},true);
   window.voziaGlobalButtonsFix=run;
 })();
+
+
+// ============================================================
+// VOZIA FIX — Login/cadastro abre direto o painel do paciente
+// ============================================================
+(function () {
+  let alreadyMoved = false;
+
+  function isVisible(el) {
+    if (!el) return false;
+    const cs = getComputedStyle(el);
+    return cs.display !== "none" &&
+      cs.visibility !== "hidden" &&
+      el.offsetHeight > 30 &&
+      el.offsetWidth > 30;
+  }
+
+  function appHasRealContent(app) {
+    if (!app) return false;
+    const text = (app.textContent || "").trim().toLowerCase();
+
+    // Evita falso positivo com app vazio.
+    if (text.length < 20) return false;
+
+    return (
+      text.includes("painel") ||
+      text.includes("protocolo") ||
+      text.includes("banco de voz") ||
+      text.includes("mensagem") ||
+      text.includes("vozia care") ||
+      text.includes("gravar") ||
+      app.querySelector("button, input, audio, textarea, select")
+    );
+  }
+
+  function openPatientPanel(force = false) {
+    const app = document.getElementById("app");
+    if (!app) return false;
+
+    if (!force && (!isVisible(app) || !appHasRealContent(app))) {
+      return false;
+    }
+
+    document.body.classList.add("vozia-patient-open");
+    document.body.classList.remove("home-open-auth");
+
+    const landing = document.getElementById("landing");
+    const auth = document.getElementById("auth");
+
+    if (landing) {
+      landing.style.display = "none";
+      landing.style.visibility = "hidden";
+      landing.style.opacity = "0";
+    }
+
+    if (auth) {
+      auth.style.display = "none";
+      auth.style.visibility = "hidden";
+      auth.style.opacity = "0";
+    }
+
+    app.classList.remove("hidden");
+    app.removeAttribute("hidden");
+    app.style.display = "block";
+    app.style.visibility = "visible";
+    app.style.opacity = "1";
+
+    if (!alreadyMoved || force) {
+      alreadyMoved = true;
+      setTimeout(function () {
+        try {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        } catch (e) {
+          window.scrollTo(0, 0);
+        }
+      }, 80);
+    }
+
+    if (typeof window.voziaGlobalButtonsFix === "function") {
+      setTimeout(window.voziaGlobalButtonsFix, 150);
+    }
+
+    return true;
+  }
+
+  function watchPatientPanel() {
+    const app = document.getElementById("app");
+    if (!app) return;
+
+    // Se já estiver logado ao abrir a página.
+    openPatientPanel(false);
+
+    const obs = new MutationObserver(function () {
+      openPatientPanel(false);
+    });
+
+    obs.observe(app, {
+      attributes: true,
+      childList: true,
+      subtree: true,
+      attributeFilter: ["class", "style", "hidden"]
+    });
+
+    // Observa também mudanças no body porque o app antigo pode trocar classes globais.
+    const bodyObs = new MutationObserver(function () {
+      openPatientPanel(false);
+    });
+
+    bodyObs.observe(document.body, {
+      attributes: true,
+      childList: false,
+      subtree: false,
+      attributeFilter: ["class", "style"]
+    });
+  }
+
+  function hookAuthButtons() {
+    const labels = [
+      "entrar",
+      "criar meu cofre",
+      "criar cofre",
+      "cadastrar",
+      "começar"
+    ];
+
+    document.querySelectorAll("button").forEach(function (btn) {
+      const text = (btn.textContent || "").trim().toLowerCase();
+      const isAuthButton = labels.some(label => text.includes(label));
+
+      if (isAuthButton && !btn.dataset.voziaPanelHook) {
+        btn.dataset.voziaPanelHook = "1";
+        btn.addEventListener("click", function () {
+          // Dá tempo do Supabase autenticar e do app antigo renderizar.
+          setTimeout(function () { openPatientPanel(false); }, 600);
+          setTimeout(function () { openPatientPanel(false); }, 1200);
+          setTimeout(function () { openPatientPanel(false); }, 2200);
+        });
+      }
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    watchPatientPanel();
+    hookAuthButtons();
+
+    setTimeout(watchPatientPanel, 600);
+    setTimeout(hookAuthButtons, 800);
+    setTimeout(function () { openPatientPanel(false); }, 1200);
+    setTimeout(function () { openPatientPanel(false); }, 2500);
+  });
+
+  document.addEventListener("click", function () {
+    setTimeout(hookAuthButtons, 80);
+    setTimeout(function () { openPatientPanel(false); }, 900);
+  }, true);
+
+  window.voziaOpenPatientPanel = function () {
+    return openPatientPanel(true);
+  };
+})();

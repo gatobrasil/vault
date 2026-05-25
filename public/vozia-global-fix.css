@@ -19,3 +19,32 @@ button.dark,.dark{background:rgba(15,23,42,.86)!important;color:#fff!important;b
 .vozia-global-top-actions button{min-width:82px;min-height:44px;border-radius:16px;border:1px solid rgba(255,255,255,.18);background:rgba(15,23,42,.9);color:#fff;font-weight:900;backdrop-filter:blur(12px);box-shadow:0 12px 35px rgba(0,0,0,.28)}
 body.home-open-auth #auth, body.home-open-auth section#auth{display:block!important;visibility:visible!important;opacity:1!important;height:auto!important;max-height:none!important;overflow:visible!important}
 @media(max-width:640px){.vozia-global-top-actions{top:10px;right:10px;gap:8px}.vozia-global-top-actions button{min-width:68px;min-height:40px;padding:8px 10px;font-size:13px}}
+
+
+/* ============================================================
+   VOZIA FIX — após login/cadastro, mostrar painel do paciente
+   ============================================================ */
+body.vozia-patient-open #landing,
+body.vozia-patient-open #auth {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  max-height: 0 !important;
+  overflow: hidden !important;
+}
+
+body.vozia-patient-open #app,
+body.vozia-patient-open section#app,
+body.vozia-patient-open main#app {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+body.vozia-patient-open {
+  background: #070B18 !important;
+}
