@@ -233,8 +233,7 @@
       <div>
         <h2>Protocolo do Paciente</h2>
         <p class="small">
-          O contrato já foi aceito no cadastro/compra. Agora o botão abaixo conduz o paciente em sequência:
-          Banco de Voz → Mensagens → Vozia Care.
+          O contrato já foi aceito no cadastro/compra. Agora o paciente pode seguir por dois caminhos: gravar o Banco de Voz ou, em casos urgentes, registrar primeiro uma mensagem de legado para a família.
         </p>
       </div>
       <button id="startProtocolBtn" class="green" type="button">Iniciar Protocolo</button>
@@ -250,7 +249,7 @@
     <div id="protocolActionBox" class="protocolActionBox">
       <b>Próxima etapa</b>
       <p class="small" id="protocolNextText">
-        Clique em “Iniciar Protocolo” para continuar pela próxima fase pendente.
+        Clique em “Iniciar Protocolo” para escolher a prioridade: Banco de Voz ou mensagem de legado familiar.
       </p>
     </div>
   </section>
@@ -442,5 +441,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
 <script src="/supabase-audio-fix-final.js"></script>
 <script src="/supabase-iphone-audio-fix.js"></script>
+<script src="/supabase-flex-protocol.js"></script>
 </body>
 </html>

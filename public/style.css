@@ -776,3 +776,173 @@ img,video,audio,canvas,svg{max-width:100%}
 /* === V8.12 iPhone audio fix === */
 #listenFixedBtn{min-width:160px}
 #recordDebugMsg{margin-top:14px}
+
+/* ============================================================
+   V8.13 — MOBILE PRO + PROTOCOLO FLEXÍVEL
+   ============================================================ */
+
+.stepOptional{
+  border-color:rgba(251,191,36,.42)!important;
+  background:linear-gradient(135deg,rgba(251,191,36,.12),rgba(124,58,237,.08))!important;
+}
+
+.protocolQuickActions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:14px;
+}
+
+.protocolQuickActions button{
+  flex:1 1 220px;
+}
+
+.protocolChoiceBox{
+  margin-top:18px;
+}
+
+.choiceGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-top:18px;
+}
+
+/* Responsividade mais forte para celular */
+@media(max-width:900px){
+  body{
+    font-size:16px;
+  }
+
+  .container{
+    width:calc(100% - 18px)!important;
+    padding-left:0!important;
+    padding-right:0!important;
+  }
+
+  .siteNav{
+    padding:12px 14px!important;
+  }
+
+  .movHero{
+    padding:28px 14px!important;
+    overflow:hidden;
+  }
+
+  .heroCopy h1{
+    max-width:100%!important;
+    font-size:clamp(38px,12vw,54px)!important;
+    line-height:1!important;
+  }
+
+  .heroCopy p{
+    max-width:100%!important;
+    font-size:16px!important;
+  }
+
+  .pill{
+    max-width:100%!important;
+    white-space:normal!important;
+  }
+
+  .heroDevice{
+    overflow:hidden!important;
+  }
+
+  .phoneMock,
+  .seniorCard{
+    max-width:100%!important;
+  }
+
+  .grid,
+  .grid2,
+  .featureGrid,
+  .pricingGrid,
+  .docsGrid,
+  .protocolGrid,
+  .choiceGrid,
+  .plans,
+  .plansWide{
+    grid-template-columns:1fr!important;
+  }
+
+  .card,
+  .featureCard,
+  .priceCard,
+  .plan,
+  .dataItem{
+    padding:16px!important;
+    border-radius:20px!important;
+  }
+
+  .sectionBlock{
+    padding:30px 14px!important;
+  }
+
+  .sectionTitle h2,
+  .card h2{
+    font-size:28px!important;
+    line-height:1.1!important;
+  }
+
+  input,
+  select,
+  textarea,
+  button{
+    max-width:100%!important;
+  }
+
+  .protocolQuickActions{
+    flex-direction:column;
+  }
+
+  .protocolQuickActions button,
+  .choiceGrid button,
+  #startProtocolBtn{
+    width:100%!important;
+  }
+
+  .stats{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+  }
+
+  .map,
+  #phraseMap{
+    grid-template-columns:repeat(4,1fr)!important;
+  }
+
+  .dot{
+    min-width:0!important;
+    width:100%!important;
+  }
+
+  .careGrid{
+    grid-template-columns:1fr!important;
+  }
+}
+
+@media(max-width:420px){
+  .heroCopy h1{
+    font-size:38px!important;
+  }
+
+  .brandBig{
+    font-size:19px!important;
+  }
+
+  .top nav{
+    width:100%;
+    display:grid!important;
+    grid-template-columns:1fr 1fr;
+  }
+
+  .top nav button{
+    width:100%!important;
+  }
+
+  .map,
+  #phraseMap{
+    grid-template-columns:repeat(3,1fr)!important;
+  }
+}
