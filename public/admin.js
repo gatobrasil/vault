@@ -154,31 +154,135 @@ function getUserCounts(userId) {
   };
 }
 
+
+function flattenObject(obj, prefix = "", out = {}) {
+  if (!obj || typeof obj !== "object") return out;
+
+  Object.entries(obj).forEach(([key, value]) => {
+    const fullKey = prefix ? `${prefix}.${key}` : key;
+
+    if (
+      value &&
+      typeof value === "object" &&
+      !Array.isArray(value) &&
+      !(value instanceof Date)
+    ) {
+      flattenObject(value, fullKey, out);
+    } else {
+      out[fullKey] = value;
+    }
+  });
+
+  return out;
+}
+
+function allPatientFields(u) {
+  const merged = {
+    ...(u || {})
+  };
+
+  if (u?.profile_json && typeof u.profile_json === "object") {
+    Object.assign(merged, flattenObject(u.profile_json, "profile"));
+    Object.assign(merged, u.profile_json);
+  }
+
+  if (u?.auth_metadata && typeof u.auth_metadata === "object") {
+    Object.assign(merged, flattenObject(u.auth_metadata, "auth_metadata"));
+  }
+
+  if (u?.raw_user_meta_data && typeof u.raw_user_meta_data === "object") {
+    Object.assign(merged, flattenObject(u.raw_user_meta_data, "auth_metadata"));
+  }
+
+  return merged;
+}
+
 function contactFields(u) {
-  const keys = Object.keys(u || {});
-  const contactLike = keys.filter(k => {
+  const all = allPatientFields(u);
+
+  const contactLike = Object.entries(all).filter(([k, v]) => {
+    if (v === null || v === undefined || String(v).trim() === "") return false;
+
     const s = k.toLowerCase();
+    const val = String(v).toLowerCase();
+
     return (
       s.includes("contact") ||
       s.includes("contato") ||
       s.includes("family") ||
+      s.includes("familia") ||
       s.includes("familiar") ||
       s.includes("respons") ||
+      s.includes("cuidador") ||
+      s.includes("tutor") ||
+      s.includes("parente") ||
+      s.includes("autoriz") ||
       s.includes("phone") ||
       s.includes("telefone") ||
       s.includes("whatsapp") ||
-      s.includes("email_") ||
-      s.includes("authorized")
+      s.includes("celular") ||
+      s.includes("email_f") ||
+      s.includes("emailf") ||
+      s.includes("kin") ||
+      s.includes("guardian") ||
+      s.includes("emergency") ||
+      s.includes("emergencia") ||
+      val.includes("@") && (s.includes("meta") || s.includes("profile"))
     );
   });
 
-  return contactLike
-    .map(k => [k, u[k]])
-    .filter(([k,v]) => v !== null && v !== undefined && String(v).trim() !== "");
+  // Remove duplicados por chave+valor
+  const seen = new Set();
+  return contactLike.filter(([k, v]) => {
+    const sig = `${k}:${String(v)}`;
+    if (seen.has(sig)) return false;
+    seen.add(sig);
+    return true;
+  });
+}
+
+function renderAllPatientFields(u) {
+  const all = allPatientFields(u);
+
+  return Object.entries(all)
+    .filter(([k, v]) => {
+      if (k === "profile_json") return false;
+      if (v && typeof v === "object") return false;
+      return true;
+    })
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => {
+      const s = k.toLowerCase();
+      const important =
+        s.includes("auth_email") ||
+        s.includes("profile_email") ||
+        s === "email" ||
+        s.includes("name") ||
+        s.includes("nome") ||
+        s.includes("phone") ||
+        s.includes("telefone") ||
+        s.includes("whatsapp") ||
+        s.includes("contact") ||
+        s.includes("contato") ||
+        s.includes("family") ||
+        s.includes("familia") ||
+        s.includes("familiar") ||
+        s.includes("respons") ||
+        s.includes("cuidador") ||
+        s.includes("autoriz") ||
+        s.includes("vault") ||
+        s.includes("plan");
+
+      return `<div style="${important ? "border-color:rgba(34,211,238,.35);" : ""}">
+        <b>${escapeHtml(k)}</b><br>
+        <span class="adminSmallMuted">${escapeHtml(v ?? "")}</span>
+      </div>`;
+    })
+    .join("");
 }
 
 function profileSearchText(u) {
-  return Object.entries(u || {})
+  return Object.entries(allPatientFields(u) || {})
     .map(([k,v]) => `${k}:${String(v ?? "")}`)
     .join(" ")
     .toLowerCase();
@@ -237,7 +341,8 @@ async function fetchProfilesWithAuthEmail(sb) {
         ...row,
         email: row.profile_email || row.email || "",
         profile_email: row.profile_email || row.email || "",
-        auth_email: row.auth_email || null
+        auth_email: row.auth_email || null,
+        auth_metadata: row.auth_metadata || row.raw_user_meta_data || null
       }));
     }
     console.warn("RPC admin_patient_directory indisponível, usando profiles.", error);
@@ -467,16 +572,7 @@ function openPatientDetail(userId) {
   const profileEmail = getProfileEmail(u);
   const contacts = contactFields(u);
 
-  const allProfileFields = Object.entries(u)
-    .sort(([a],[b]) => a.localeCompare(b))
-    .map(([k,v]) => {
-      const important = ["auth_email", "profile_email", "email", "name", "phone", "contact_email", "family_email", "responsible_email", "authorized_contact_email", "contact_phone", "vault_id", "plan"].includes(k);
-      return `<div style="${important ? "border-color:rgba(34,211,238,.35);" : ""}">
-        <b>${escapeHtml(k)}</b><br>
-        <span class="adminSmallMuted">${escapeHtml(v ?? "")}</span>
-      </div>`;
-    })
-    .join("");
+  const allProfileFields = renderAllPatientFields(u);
 
   box.innerHTML = `
     <h2>Perfil completo do paciente</h2>
@@ -490,7 +586,7 @@ function openPatientDetail(userId) {
       ${
         contacts.length
           ? `<b>Contatos familiares/cadastro:</b><br>${contacts.map(([k,v]) => `${escapeHtml(k)}: ${escapeHtml(v)}`).join("<br>")}`
-          : "Nenhum campo de contato familiar identificado no profile."
+          : "Nenhum campo familiar/contato identificado em profiles ou metadados Auth. Confira se o formulário está salvando esses campos no Supabase."
       }
     </div>
 
