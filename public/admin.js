@@ -1,6 +1,12 @@
 // ============================================================
-// VOZIA ADMIN BACKUP REAL — baixa áudios em ZIP
+// VOZIA ADMIN — Storage Real por storage.list()
 // Coloque em: public/admin.js
+//
+// Corrige:
+// - Não depende de storage.objects.
+// - Lista arquivos reais com supabase.storage.from(bucket).list()
+// - Encontra áudios dentro de voice-recordings/USER_ID/frase-xxx
+// - Faz backup ZIP com arquivos reais.
 // ============================================================
 
 const $ = (id) => document.getElementById(id);
@@ -9,6 +15,7 @@ let adminUsers = [];
 let adminRecordings = [];
 let adminLegacy = [];
 let adminCare = [];
+let storageFiles = [];
 let signedCache = {};
 
 const VOICE_BUCKETS = [
@@ -16,9 +23,7 @@ const VOICE_BUCKETS = [
   "gravações de voz",
   "gravacoes de voz",
   "gravações-de-voz",
-  "gravacoes-de-voz",
-  "voz do banco vo zia",
-  "voz do banco vozia"
+  "gravacoes-de-voz"
 ];
 
 const LEGACY_BUCKETS = [
@@ -28,6 +33,8 @@ const LEGACY_BUCKETS = [
   "áudios-legados",
   "audios-legados"
 ];
+
+const ALL_AUDIO_BUCKETS = [...VOICE_BUCKETS, ...LEGACY_BUCKETS];
 
 function adminMsg(text, ok = false) {
   const el = $("adminMsg");
@@ -40,10 +47,12 @@ function adminMsg(text, ok = false) {
 function progress(text) {
   const el = $("backupProgress");
   const out = $("backupOutput");
+
   if (el) {
     el.style.display = "block";
     el.textContent = text;
   }
+
   if (out) {
     out.value += text + "\n";
     out.scrollTop = out.scrollHeight;
@@ -78,10 +87,12 @@ async function adminIsAllowed(user) {
 async function adminLogin() {
   try {
     adminMsg("Entrando...", true);
+
     await voziaSignIn({
       email: $("adminEmail")?.value?.trim(),
       password: $("adminPassword")?.value?.trim()
     });
+
     await adminCheck();
   } catch (e) {
     adminMsg(e.message || "Erro ao entrar no admin.");
@@ -92,6 +103,7 @@ async function adminLogout() {
   try {
     if (typeof voziaSignOut === "function") await voziaSignOut();
   } catch (e) {}
+
   location.reload();
 }
 
@@ -117,7 +129,9 @@ async function adminCheck() {
     $("adminLoginCard")?.classList.add("hidden");
     $("adminArea")?.classList.remove("hidden");
 
-    if ($("adminWho")) $("adminWho").textContent = "Administrador conectado: " + user.email;
+    if ($("adminWho")) {
+      $("adminWho").textContent = "Administrador conectado: " + user.email;
+    }
 
     await adminLoadAll();
   } catch (e) {
@@ -130,6 +144,7 @@ async function adminLoadAll() {
 
   try {
     adminMsg("Carregando dados...", true);
+    clearProgress();
 
     const [profiles, recs, legacy, care] = await Promise.all([
       sb.from("profiles").select("*").order("created_at", { ascending: false }),
@@ -149,18 +164,90 @@ async function adminLoadAll() {
     adminCare = care.data || [];
     signedCache = {};
 
+    progress("Procurando arquivos reais no Storage...");
+    await loadRealStorageFilesByList();
+
     adminRenderAll();
-    $("adminMsg").style.display = "none";
+
+    if ($("adminMsg")) $("adminMsg").style.display = "none";
   } catch (e) {
     adminMsg("Erro ao carregar dados: " + (e.message || "erro") + ". Confira SQL/policies do admin.");
   }
 }
 
+// Lista recursivamente usando Storage API, não storage.objects
+async function listBucketRecursive(bucket, path = "", depth = 0) {
+  const sb = voziaSupabase || iniciarSupabase();
+  const results = [];
+
+  if (depth > 5) return results;
+
+  const { data, error } = await sb.storage
+    .from(bucket)
+    .list(path, {
+      limit: 1000,
+      offset: 0,
+      sortBy: { column: "name", order: "asc" }
+    });
+
+  if (error) {
+    throw new Error(`${bucket}/${path || ""}: ${error.message}`);
+  }
+
+  for (const item of data || []) {
+    const fullPath = path ? `${path}/${item.name}` : item.name;
+
+    // Pasta no Supabase geralmente não tem metadata.size e pode ter id null
+    const isFolder =
+      item.id === null ||
+      item.metadata === null ||
+      item.metadata === undefined ||
+      item.metadata?.mimetype === undefined && item.metadata?.size === undefined;
+
+    if (isFolder) {
+      const children = await listBucketRecursive(bucket, fullPath, depth + 1);
+      results.push(...children);
+    } else {
+      results.push({
+        bucket_id: bucket,
+        name: fullPath,
+        id: item.id,
+        metadata: item.metadata || {},
+        created_at: item.created_at || null,
+        updated_at: item.updated_at || null
+      });
+    }
+  }
+
+  return results;
+}
+
+async function loadRealStorageFilesByList() {
+  storageFiles = [];
+  const logs = [];
+
+  for (const bucket of ALL_AUDIO_BUCKETS) {
+    try {
+      const files = await listBucketRecursive(bucket);
+      storageFiles.push(...files);
+      logs.push(`OK ${bucket}: ${files.length} arquivo(s)`);
+    } catch (e) {
+      logs.push(`ERRO ${bucket}: ${e.message}`);
+    }
+  }
+
+  progress("Resultado Storage:");
+  logs.forEach(l => progress(l));
+  progress(`Total de arquivos reais encontrados: ${storageFiles.length}`);
+
+  return storageFiles;
+}
+
 function adminRenderAll() {
-  $("stTotal").textContent = adminUsers.length;
-  $("stRecordings").textContent = adminRecordings.length;
-  $("stLegacy").textContent = adminLegacy.length;
-  $("stCare").textContent = adminCare.length;
+  if ($("stTotal")) $("stTotal").textContent = adminUsers.length;
+  if ($("stRecordings")) $("stRecordings").textContent = adminRecordings.length;
+  if ($("stLegacy")) $("stLegacy").textContent = adminLegacy.length;
+  if ($("stCare")) $("stCare").textContent = adminCare.length;
 
   renderUsers();
   renderRecordings();
@@ -183,11 +270,46 @@ function userLabel(id) {
   return `${u.name || "Sem nome"} — ${u.email || ""}`;
 }
 
+function getRealFilesForUser(userId) {
+  return storageFiles.filter(f => {
+    const name = String(f.name || "");
+    return name === userId || name.startsWith(userId + "/") || name.includes("/" + userId + "/");
+  });
+}
+
+function getRealFilesForRecording(recording) {
+  const path = String(recording?.audio_path || "");
+  const userId = String(recording?.user_id || "");
+  const phraseIndex = Number(recording?.phrase_index || 0) + 1;
+  const phrasePad = String(phraseIndex).padStart(3, "0");
+
+  const exact = storageFiles.filter(f => String(f.name || "") === path);
+  if (exact.length) return exact;
+
+  const byEnding = storageFiles.filter(f => path && String(f.name || "").endsWith(path));
+  if (byEnding.length) return byEnding;
+
+  const byUserAndPhrase = storageFiles.filter(f => {
+    const name = String(f.name || "");
+    return name.startsWith(userId + "/") &&
+      (
+        name.includes(`frase-${phrasePad}`) ||
+        name.includes(`frase-${phraseIndex}`) ||
+        name.includes(`-${phrasePad}-`)
+      );
+  });
+
+  if (byUserAndPhrase.length) return byUserAndPhrase;
+
+  return [];
+}
+
 function getUserCounts(userId) {
   return {
     recordings: adminRecordings.filter(r => r.user_id === userId).length,
     legacy: adminLegacy.filter(m => m.user_id === userId).length,
-    care: adminCare.filter(c => c.user_id === userId).length
+    care: adminCare.filter(c => c.user_id === userId).length,
+    realFiles: getRealFilesForUser(userId).length
   };
 }
 
@@ -198,7 +320,7 @@ function renderUsers() {
   const q = ($("adminSearch")?.value || "").toLowerCase();
 
   const rows = adminUsers.filter(u => {
-    const hay = [u.name, u.email, u.plan, u.vault_id, u.subscription_status].join(" ").toLowerCase();
+    const hay = [u.name, u.email, u.plan, u.vault_id, u.subscription_status, u.id].join(" ").toLowerCase();
     return hay.includes(q);
   });
 
@@ -209,6 +331,7 @@ function renderUsers() {
 
   box.innerHTML = rows.map(u => {
     const c = getUserCounts(u.id);
+
     return `
       <div class="dataItem">
         <div class="adminPatientHeader">
@@ -221,7 +344,8 @@ function renderUsers() {
             </p>
           </div>
           <div>
-            <span class="adminBadge">${c.recordings} áudios</span>
+            <span class="adminBadge">${c.recordings} registros</span>
+            <span class="adminBadge">${c.realFiles} arquivos reais</span>
             <span class="adminBadge">${c.legacy} mensagens</span>
             <span class="adminBadge">${c.care} pedidos</span>
           </div>
@@ -229,7 +353,7 @@ function renderUsers() {
         <div class="adminToolbar">
           <button type="button" onclick="adminOpenPatient('${u.id}')">Abrir paciente</button>
           <button type="button" class="green" onclick="backupPatientZip('${u.id}')">Baixar ZIP do paciente</button>
-          <button type="button" class="ghost" onclick="debugPatientAudio('${u.id}')">Diagnosticar áudios</button>
+          <button type="button" class="ghost" onclick="debugPatientAudio('${u.id}')">Diagnosticar arquivos reais</button>
         </div>
       </div>
     `;
@@ -240,23 +364,45 @@ function renderRecordings() {
   const box = $("adminRecordingsList");
   if (!box) return;
 
-  if (!adminRecordings.length) {
-    box.innerHTML = "<p class='small'>Nenhuma gravação ainda.</p>";
+  if (!adminRecordings.length && !storageFiles.length) {
+    box.innerHTML = "<p class='small'>Nenhuma gravação e nenhum arquivo real encontrado.</p>";
     return;
   }
 
-  box.innerHTML = adminRecordings.slice(0, 120).map(r => `
-    <div class="dataItem">
-      <b>${escapeHtml(userLabel(r.user_id))}</b>
-      <p class="small">
-        Frase ${Number(r.phrase_index || 0) + 1} • ${escapeHtml(r.phrase_category || "-")}<br>
-        ${escapeHtml(r.phrase_text || "")}<br>
-        Caminho: ${escapeHtml(r.audio_path || "")}<br>
-        Duração: ${r.duration_ms ? Math.round(r.duration_ms / 1000) + "s" : "-"}
-      </p>
-      <button type="button" onclick="adminOpenAudio('${escapeAttr(r.audio_path || "")}', 'voice')">Ouvir/Baixar</button>
-    </div>
-  `).join("");
+  const recHtml = adminRecordings.slice(0, 120).map(r => {
+    const real = getRealFilesForRecording(r);
+    return `
+      <div class="dataItem">
+        <b>${escapeHtml(userLabel(r.user_id))}</b>
+        <p class="small">
+          Frase ${Number(r.phrase_index || 0) + 1} • ${escapeHtml(r.phrase_category || "-")}<br>
+          ${escapeHtml(r.phrase_text || "")}<br>
+          audio_path na tabela: ${escapeHtml(r.audio_path || "")}<br>
+          Arquivos reais encontrados: ${real.length}
+        </p>
+        ${
+          real.length
+            ? real.map(f => `<button type="button" onclick="adminOpenRealFile('${escapeAttr(f.bucket_id)}','${escapeAttr(f.name)}')">Abrir real</button>`).join(" ")
+            : `<button type="button" onclick="debugRecording('${escapeAttr(r.id || "")}')">Diagnosticar</button>`
+        }
+      </div>
+    `;
+  }).join("");
+
+  const orphanHtml = storageFiles.length
+    ? `
+      <h3>Arquivos reais encontrados no Storage</h3>
+      ${storageFiles.slice(0, 200).map(f => `
+        <div class="dataItem">
+          <b>${escapeHtml(f.bucket_id)}</b>
+          <p class="small">${escapeHtml(f.name)}<br>${f.created_at ? new Date(f.created_at).toLocaleString("pt-BR") : ""}</p>
+          <button type="button" onclick="adminOpenRealFile('${escapeAttr(f.bucket_id)}','${escapeAttr(f.name)}')">Abrir/Baixar arquivo real</button>
+        </div>
+      `).join("")}
+    `
+    : "";
+
+  box.innerHTML = recHtml + orphanHtml;
 }
 
 function renderLegacy() {
@@ -319,7 +465,7 @@ function renderReturns() {
     } else if (c.legacy > 0) {
       status = "Mensagem feita — falta Care";
       cls = "";
-    } else if (c.recordings > 0) {
+    } else if (c.recordings > 0 || c.realFiles > 0) {
       status = "Começou banco de voz";
       cls = "";
     }
@@ -330,7 +476,7 @@ function renderReturns() {
         <p class="small">
           ${escapeHtml(u.email || "")}<br>
           Status: <b>${escapeHtml(status)}</b><br>
-          Gravações: ${c.recordings} • Mensagens: ${c.legacy} • Pedidos Care: ${c.care}
+          Registros: ${c.recordings} • Arquivos reais: ${c.realFiles} • Mensagens: ${c.legacy} • Care: ${c.care}
         </p>
         <button type="button" onclick="adminOpenPatient('${u.id}')">Abrir acompanhamento</button>
       </div>
@@ -344,6 +490,7 @@ async function adminOpenPatient(userId) {
     .filter(r => r.user_id === userId)
     .sort((a,b) => Number(a.phrase_index) - Number(b.phrase_index));
 
+  const realFiles = getRealFilesForUser(userId);
   const legacy = adminLegacy.filter(m => m.user_id === userId);
   const care = adminCare.filter(c => c.user_id === userId);
   const box = $("adminPatientDetail");
@@ -361,44 +508,51 @@ async function adminOpenPatient(userId) {
     </p>
 
     <div class="adminMiniGrid">
-      <div><b>${recordings.length}</b><br><span class="small">áudios</span></div>
+      <div><b>${recordings.length}</b><br><span class="small">registros</span></div>
+      <div><b>${realFiles.length}</b><br><span class="small">arquivos reais</span></div>
       <div><b>${legacy.length}</b><br><span class="small">mensagens</span></div>
       <div><b>${care.length}</b><br><span class="small">pedidos Care</span></div>
-      <div><b>${u?.subscription_status || "ativo"}</b><br><span class="small">status</span></div>
     </div>
 
     <div class="adminToolbar">
       <button onclick="backupPatientZip('${userId}')" type="button" class="green">Baixar ZIP do paciente</button>
-      <button onclick="debugPatientAudio('${userId}')" type="button" class="ghost">Diagnosticar áudios</button>
+      <button onclick="debugPatientAudio('${userId}')" type="button" class="ghost">Diagnosticar arquivos reais</button>
     </div>
 
-    <h3>Áudios do Banco de Voz</h3>
+    <h3>Arquivos reais encontrados no Storage</h3>
     <div class="adminAudioGrid">
       ${
-        recordings.length
-          ? recordings.map(r => `
+        realFiles.length
+          ? realFiles.map(f => `
             <div class="adminAudioItem">
-              <b>Frase ${Number(r.phrase_index || 0) + 1}</b>
-              <p class="small">${escapeHtml(r.phrase_text || "")}<br>Caminho: ${escapeHtml(r.audio_path || "")}</p>
-              <button type="button" onclick="adminOpenAudio('${escapeAttr(r.audio_path || "")}', 'voice')">Ouvir/Baixar</button>
+              <b>${escapeHtml(f.bucket_id)}</b>
+              <p class="small">${escapeHtml(f.name)}</p>
+              <button type="button" onclick="adminOpenRealFile('${escapeAttr(f.bucket_id)}','${escapeAttr(f.name)}')">Ouvir/Baixar real</button>
             </div>
           `).join("")
-          : "<p class='small'>Nenhuma gravação ainda.</p>"
+          : "<p class='small'>Nenhum arquivo real encontrado para o ID deste paciente.</p>"
       }
     </div>
 
-    <h3>Mensagens de legado</h3>
-    <div class="adminList">
+    <h3>Registros na tabela recordings</h3>
+    <div class="adminAudioGrid">
       ${
-        legacy.length
-          ? legacy.map(m => `
-            <div class="dataItem">
-              <b>${escapeHtml(m.title || "Mensagem")}</b>
-              <p class="small">Para: ${escapeHtml(m.recipient || "-")}<br>${escapeHtml(m.note || "")}<br>Caminho: ${escapeHtml(m.audio_path || "")}</p>
-              ${m.audio_path ? `<button onclick="adminOpenAudio('${escapeAttr(m.audio_path)}', 'legacy')" type="button">Ouvir/Baixar áudio</button>` : ""}
-            </div>
-          `).join("")
-          : "<p class='small'>Nenhuma mensagem ainda.</p>"
+        recordings.length
+          ? recordings.map(r => {
+              const real = getRealFilesForRecording(r);
+              return `
+                <div class="adminAudioItem">
+                  <b>Frase ${Number(r.phrase_index || 0) + 1}</b>
+                  <p class="small">
+                    ${escapeHtml(r.phrase_text || "")}<br>
+                    audio_path: ${escapeHtml(r.audio_path || "")}<br>
+                    arquivos reais ligados: ${real.length}
+                  </p>
+                  ${real.map(f => `<button type="button" onclick="adminOpenRealFile('${escapeAttr(f.bucket_id)}','${escapeAttr(f.name)}')">Abrir real</button>`).join(" ")}
+                </div>
+              `;
+            }).join("")
+          : "<p class='small'>Nenhum registro na tabela recordings.</p>"
       }
     </div>
   `;
@@ -406,42 +560,50 @@ async function adminOpenPatient(userId) {
   box.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-async function signedUrl(path, type = "voice") {
-  if (!path) throw new Error("Arquivo sem caminho.");
-
-  const cacheKey = `${type}:${path}`;
+async function signedUrlByBucket(bucket, path) {
+  const cacheKey = `${bucket}:${path}`;
   if (signedCache[cacheKey]) return signedCache[cacheKey];
 
   const sb = voziaSupabase || iniciarSupabase();
+
+  const { data, error } = await sb.storage
+    .from(bucket)
+    .createSignedUrl(path, 60 * 30);
+
+  if (error) throw error;
+  if (!data?.signedUrl) throw new Error("Sem signed URL.");
+
+  signedCache[cacheKey] = data.signedUrl;
+  return data.signedUrl;
+}
+
+async function signedUrl(path, type = "voice") {
+  if (!path) throw new Error("Arquivo sem caminho.");
+
+  const realExact = storageFiles.find(f => f.name === path || f.name.endsWith(path));
+  if (realExact) return signedUrlByBucket(realExact.bucket_id, realExact.name);
+
   const buckets = type === "legacy" ? LEGACY_BUCKETS : VOICE_BUCKETS;
   let errors = [];
 
   for (const bucket of buckets) {
-    const { data, error } = await sb.storage
-      .from(bucket)
-      .createSignedUrl(path, 60 * 30);
-
-    if (!error && data?.signedUrl) {
-      signedCache[cacheKey] = data.signedUrl;
-      return data.signedUrl;
+    try {
+      return await signedUrlByBucket(bucket, path);
+    } catch (e) {
+      errors.push(`${bucket}: ${e.message}`);
     }
-
-    errors.push(`${bucket}: ${error?.message || "sem URL"}`);
   }
 
   throw new Error("Não encontrei o áudio. Tentativas: " + errors.join(" | "));
 }
 
-async function fetchAudioBlob(path, type = "voice") {
-  const url = await signedUrl(path, type);
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Falha ao baixar ${path}: HTTP ${res.status}`);
-  return await res.blob();
-}
-
-function getExt(path, fallback = "mp4") {
-  const m = String(path || "").match(/\.([a-z0-9]+)(\?|$)/i);
-  return m ? m[1].toLowerCase() : fallback;
+async function adminOpenRealFile(bucket, path) {
+  try {
+    const url = await signedUrlByBucket(bucket, path);
+    window.open(url, "_blank");
+  } catch (e) {
+    alert("Erro ao abrir arquivo real: " + (e.message || "erro"));
+  }
 }
 
 async function adminOpenAudio(path, type = "voice") {
@@ -453,6 +615,18 @@ async function adminOpenAudio(path, type = "voice") {
   }
 }
 
+async function fetchRealBlob(bucket, path) {
+  const url = await signedUrlByBucket(bucket, path);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Falha ao baixar ${bucket}/${path}: HTTP ${res.status}`);
+  return await res.blob();
+}
+
+function getExt(path, fallback = "mp4") {
+  const m = String(path || "").match(/\.([a-z0-9]+)(\?|$)/i);
+  return m ? m[1].toLowerCase() : fallback;
+}
+
 async function backupPatientZip(userId) {
   try {
     clearProgress();
@@ -460,61 +634,48 @@ async function backupPatientZip(userId) {
     const user = userById(userId);
     if (!user) throw new Error("Paciente não encontrado.");
 
-    const recordings = adminRecordings
-      .filter(r => r.user_id === userId)
-      .sort((a,b) => Number(a.phrase_index) - Number(b.phrase_index));
+    const realFiles = getRealFilesForUser(userId);
+    const recordings = adminRecordings.filter(r => r.user_id === userId);
+    const legacy = adminLegacy.filter(m => m.user_id === userId);
+    const care = adminCare.filter(c => c.user_id === userId);
 
-    const legacy = adminLegacy.filter(m => m.user_id === userId && m.audio_path);
-
-    if (!recordings.length && !legacy.length) {
-      alert("Este paciente ainda não tem áudios para backup.");
+    if (!realFiles.length) {
+      alert("Não encontrei arquivos reais no Storage para este paciente. Use Diagnosticar arquivos reais.");
       return;
     }
 
     const zip = new JSZip();
     const root = zip.folder(userFolderName(user));
-    const voiceFolder = root.folder("banco-de-voz");
-    const legacyFolder = root.folder("mensagens-legado");
+    const audioFolder = root.folder("arquivos-reais-storage");
 
     root.file("manifesto-paciente.json", JSON.stringify({
       generated_at: new Date().toISOString(),
       profile: user,
       recordings,
-      legacy_messages: adminLegacy.filter(m => m.user_id === userId),
-      care_requests: adminCare.filter(c => c.user_id === userId)
+      legacy_messages: legacy,
+      care_requests: care,
+      real_storage_files: realFiles
     }, null, 2));
 
-    let total = recordings.length + legacy.length;
     let done = 0;
-
-    for (const r of recordings) {
+    for (const f of realFiles) {
       done++;
-      progress(`Baixando áudio ${done}/${total}: frase ${Number(r.phrase_index) + 1}`);
+      progress(`Baixando arquivo real ${done}/${realFiles.length}: ${f.bucket_id}/${f.name}`);
 
-      const blob = await fetchAudioBlob(r.audio_path, "voice");
-      const ext = getExt(r.audio_path, "mp4");
-      const fileName = `frase-${String(Number(r.phrase_index) + 1).padStart(3, "0")}.${ext}`;
-
-      voiceFolder.file(fileName, blob);
-      voiceFolder.file(`frase-${String(Number(r.phrase_index) + 1).padStart(3, "0")}.txt`, r.phrase_text || "");
+      try {
+        const blob = await fetchRealBlob(f.bucket_id, f.name);
+        const ext = getExt(f.name, "mp4");
+        const cleanName = safeFile(f.name.split("/").pop() || `audio-${done}.${ext}`);
+        audioFolder.file(`${String(done).padStart(3,"0")}-${cleanName}`, blob);
+      } catch (e) {
+        audioFolder.file(`ERRO-${String(done).padStart(3,"0")}.txt`, `${f.bucket_id}/${f.name}\n${e.message}`);
+      }
     }
 
-    for (const m of legacy) {
-      done++;
-      progress(`Baixando mensagem ${done}/${total}: ${m.title || "mensagem"}`);
-
-      const blob = await fetchAudioBlob(m.audio_path, "legacy");
-      const ext = getExt(m.audio_path, "mp4");
-      const fileName = `${safeFile(m.title || "mensagem")}-${m.id || Date.now()}.${ext}`;
-
-      legacyFolder.file(fileName, blob);
-      legacyFolder.file(`${safeFile(m.title || "mensagem")}-${m.id || Date.now()}.txt`, m.note || "");
-    }
-
-    progress("Gerando arquivo ZIP...");
+    progress("Gerando ZIP...");
     const zipBlob = await zip.generateAsync({ type: "blob" });
-    downloadBlob(`backup-vozia-${userFolderName(user)}.zip`, zipBlob);
-    progress("Backup ZIP finalizado.");
+    downloadBlob(`backup-real-${userFolderName(user)}.zip`, zipBlob);
+    progress("Backup finalizado.");
   } catch (e) {
     alert("Erro no backup: " + (e.message || "erro"));
     progress("ERRO: " + (e.message || "erro"));
@@ -525,73 +686,42 @@ async function backupAllAudioZip() {
   try {
     clearProgress();
 
+    if (!storageFiles.length) {
+      alert("Nenhum arquivo real encontrado no Storage.");
+      return;
+    }
+
     const zip = new JSZip();
-    const manifest = {
+    zip.file("manifesto-storage-geral.json", JSON.stringify({
       generated_at: new Date().toISOString(),
-      total_users: adminUsers.length,
-      total_recordings: adminRecordings.length,
-      total_legacy_messages: adminLegacy.length,
-      users: []
-    };
+      users: adminUsers,
+      recordings: adminRecordings,
+      legacy_messages: adminLegacy,
+      care_requests: adminCare,
+      real_storage_files: storageFiles
+    }, null, 2));
 
-    let total = adminRecordings.length + adminLegacy.filter(m => m.audio_path).length;
     let done = 0;
+    for (const f of storageFiles) {
+      done++;
+      const userId = String(f.name || "").split("/")[0];
+      const user = userById(userId);
+      const folder = zip.folder(user ? userFolderName(user) : "arquivos-sem-usuario-identificado");
 
-    for (const user of adminUsers) {
-      const userRoot = zip.folder(userFolderName(user));
-      const voiceFolder = userRoot.folder("banco-de-voz");
-      const legacyFolder = userRoot.folder("mensagens-legado");
+      progress(`Baixando arquivo real ${done}/${storageFiles.length}: ${f.bucket_id}/${f.name}`);
 
-      const recordings = adminRecordings
-        .filter(r => r.user_id === user.id)
-        .sort((a,b) => Number(a.phrase_index) - Number(b.phrase_index));
-
-      const legacy = adminLegacy.filter(m => m.user_id === user.id);
-      const legacyWithAudio = legacy.filter(m => m.audio_path);
-
-      manifest.users.push({
-        profile: user,
-        recordings,
-        legacy_messages: legacy,
-        care_requests: adminCare.filter(c => c.user_id === user.id)
-      });
-
-      userRoot.file("manifesto-paciente.json", JSON.stringify(manifest.users[manifest.users.length - 1], null, 2));
-
-      for (const r of recordings) {
-        done++;
-        progress(`Baixando ${done}/${total}: ${user.email || user.id} frase ${Number(r.phrase_index) + 1}`);
-
-        try {
-          const blob = await fetchAudioBlob(r.audio_path, "voice");
-          const ext = getExt(r.audio_path, "mp4");
-          voiceFolder.file(`frase-${String(Number(r.phrase_index) + 1).padStart(3, "0")}.${ext}`, blob);
-          voiceFolder.file(`frase-${String(Number(r.phrase_index) + 1).padStart(3, "0")}.txt`, r.phrase_text || "");
-        } catch (e) {
-          voiceFolder.file(`ERRO-frase-${String(Number(r.phrase_index) + 1).padStart(3, "0")}.txt`, e.message || "erro");
-        }
-      }
-
-      for (const m of legacyWithAudio) {
-        done++;
-        progress(`Baixando ${done}/${total}: ${user.email || user.id} legado ${m.title || ""}`);
-
-        try {
-          const blob = await fetchAudioBlob(m.audio_path, "legacy");
-          const ext = getExt(m.audio_path, "mp4");
-          legacyFolder.file(`${safeFile(m.title || "mensagem")}-${m.id || Date.now()}.${ext}`, blob);
-          legacyFolder.file(`${safeFile(m.title || "mensagem")}-${m.id || Date.now()}.txt`, m.note || "");
-        } catch (e) {
-          legacyFolder.file(`ERRO-${safeFile(m.title || "mensagem")}.txt`, e.message || "erro");
-        }
+      try {
+        const blob = await fetchRealBlob(f.bucket_id, f.name);
+        const fileName = safeFile(f.name.replaceAll("/", "-"));
+        folder.file(`${String(done).padStart(4,"0")}-${fileName}`, blob);
+      } catch (e) {
+        folder.file(`ERRO-${String(done).padStart(4,"0")}.txt`, `${f.bucket_id}/${f.name}\n${e.message}`);
       }
     }
 
-    zip.file("manifesto-geral.json", JSON.stringify(manifest, null, 2));
-
     progress("Gerando ZIP geral...");
     const zipBlob = await zip.generateAsync({ type: "blob" });
-    downloadBlob(`backup-geral-vozia-audios-${new Date().toISOString().slice(0,10)}.zip`, zipBlob);
+    downloadBlob(`backup-real-vozia-storage-${new Date().toISOString().slice(0,10)}.zip`, zipBlob);
     progress("Backup geral finalizado.");
   } catch (e) {
     alert("Erro no backup geral: " + (e.message || "erro"));
@@ -601,47 +731,68 @@ async function backupAllAudioZip() {
 
 async function debugPatientAudio(userId) {
   clearProgress();
+
   const user = userById(userId);
   const recordings = adminRecordings.filter(r => r.user_id === userId);
+  const realFiles = getRealFilesForUser(userId);
 
   progress(`Paciente: ${user?.email || userId}`);
-  progress(`Total de registros na tabela recordings: ${recordings.length}`);
+  progress(`ID do paciente: ${userId}`);
+  progress(`Registros em recordings: ${recordings.length}`);
+  progress(`Arquivos reais no Storage com esse ID: ${realFiles.length}`);
+  progress(`Total geral de arquivos reais carregados do Storage: ${storageFiles.length}`);
+  progress("");
 
-  if (!recordings.length) {
-    progress("A tabela recordings não tem nenhum áudio para este usuário.");
-    return;
+  if (realFiles.length) {
+    progress("ARQUIVOS REAIS ENCONTRADOS:");
+    realFiles.forEach(f => progress(`- bucket=${f.bucket_id} | name=${f.name}`));
+  } else {
+    progress("Nenhum arquivo real encontrado começando com o ID do paciente.");
   }
 
-  for (const r of recordings) {
-    progress(`Testando frase ${Number(r.phrase_index) + 1}: ${r.audio_path}`);
-    try {
-      const url = await signedUrl(r.audio_path, "voice");
-      progress(`OK: link gerado`);
-    } catch (e) {
-      progress(`ERRO: ${e.message}`);
-    }
-  }
+  progress("");
+  progress("REGISTROS DA TABELA RECORDINGS:");
+  recordings.forEach(r => {
+    const matches = getRealFilesForRecording(r);
+    progress(`- frase ${Number(r.phrase_index)+1} | audio_path=${r.audio_path} | matches=${matches.length}`);
+    matches.forEach(f => progress(`  -> ${f.bucket_id}/${f.name}`));
+  });
 
-  $("backupOutput").scrollIntoView({ behavior: "smooth" });
+  $("backupOutput")?.scrollIntoView({ behavior: "smooth" });
+}
+
+function debugRecording(recordingId) {
+  const r = adminRecordings.find(x => String(x.id) === String(recordingId));
+  if (!r) return alert("Registro não encontrado.");
+
+  clearProgress();
+  progress(`Registro: ${r.id}`);
+  progress(`user_id: ${r.user_id}`);
+  progress(`audio_path: ${r.audio_path}`);
+
+  const matches = getRealFilesForRecording(r);
+  progress(`Matches encontrados: ${matches.length}`);
+  matches.forEach(f => progress(`- ${f.bucket_id}/${f.name}`));
 }
 
 async function adminBackupJson() {
-  const manifest = {
+  downloadText(`manifesto-vozia-${new Date().toISOString().slice(0,10)}.json`, JSON.stringify({
     generated_at: new Date().toISOString(),
     users: adminUsers,
     recordings: adminRecordings,
     legacy_messages: adminLegacy,
-    care_requests: adminCare
-  };
-  downloadText(`manifesto-vozia-${new Date().toISOString().slice(0,10)}.json`, JSON.stringify(manifest, null, 2), "application/json");
+    care_requests: adminCare,
+    real_storage_files: storageFiles
+  }, null, 2), "application/json");
 }
 
 function adminBackupCsv() {
-  const rows = [["nome","email","plano","vault_id","total_gravacoes","total_mensagens","total_care","created_at"]];
+  const rows = [["nome","email","plano","vault_id","registros_recordings","arquivos_reais","mensagens","care","created_at"]];
   adminUsers.forEach(u => {
     const c = getUserCounts(u.id);
-    rows.push([u.name || "", u.email || "", u.plan || "", u.vault_id || "", c.recordings, c.legacy, c.care, u.created_at || ""]);
+    rows.push([u.name || "", u.email || "", u.plan || "", u.vault_id || "", c.recordings, c.realFiles, c.legacy, c.care, u.created_at || ""]);
   });
+
   const csv = rows.map(r => r.map(v => `"${String(v).replaceAll('"','""')}"`).join(",")).join("\n");
   downloadText(`pacientes-vozia-${new Date().toISOString().slice(0,10)}.csv`, csv, "text/csv");
 }
@@ -666,7 +817,7 @@ function safeFile(text) {
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9-_@.]+/gi, "-")
     .replace(/-+/g, "-")
-    .slice(0, 90);
+    .slice(0, 100);
 }
 
 function escapeHtml(text) {
