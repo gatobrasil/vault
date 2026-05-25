@@ -1,3 +1,11 @@
+## V8.13 — Mobile pro e protocolo flexível
+
+- Responsividade mobile reforçada para home, login, painel, protocolo, gravação e mapas.
+- Adicionado `supabase-flex-protocol.js`.
+- O paciente agora pode gravar uma mensagem de legado sem concluir todas as frases do Banco de Voz.
+- Adicionados botões rápidos: "Gravar recado familiar agora" e "Banco de Voz".
+- Fluxo mais adequado para casos urgentes, doença avançada, câncer terminal ou foco exclusivo em recado familiar.
+
 ## V8.12 — iPhone e buckets Supabase
 
 - Corrigido problema de gravação/reprodução no iPhone/Safari.
