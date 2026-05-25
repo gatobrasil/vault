@@ -3,9 +3,41 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Admin Vozia | Supabase</title>
+<title>Admin Vozia | Painel completo</title>
 <link rel="stylesheet" href="/style.css">
 <link rel="stylesheet" href="/vozia-safe-nav.css">
+<style>
+  .adminHero{margin-top:22px}
+  .adminToolbar{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}
+  .adminToolbar button,.adminToolbar a{flex:1 1 190px}
+  .adminSearchGrid{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end}
+  .adminTabs{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0}
+  .adminTabs button{flex:1 1 150px}
+  .adminPanel{display:none}
+  .adminPanel.active{display:block}
+  .adminList{display:grid;gap:12px}
+  .adminPatientCard{border:1px solid rgba(148,163,184,.18);background:rgba(255,255,255,.045);border-radius:20px;padding:16px}
+  .adminPatientHeader{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:start}
+  .adminBadges{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .adminBadge{display:inline-flex;padding:6px 10px;border-radius:999px;background:rgba(34,211,238,.10);border:1px solid rgba(34,211,238,.28);color:#67e8f9;font-size:12px;font-weight:900}
+  .adminDanger{background:rgba(251,113,133,.10)!important;border-color:rgba(251,113,133,.35)!important;color:#fecdd3!important}
+  .adminOk{background:rgba(52,211,153,.10)!important;border-color:rgba(52,211,153,.35)!important;color:#bbf7d0!important}
+  .adminMiniGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:14px 0}
+  .adminMiniGrid div{padding:14px;border-radius:18px;background:rgba(255,255,255,.055);border:1px solid rgba(148,163,184,.18)}
+  .adminDetailGrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .adminAudioGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  .adminAudioItem{padding:14px;border-radius:18px;background:rgba(2,6,23,.38);border:1px solid rgba(148,163,184,.18)}
+  .adminAudioItem audio{width:100%;margin-top:8px}
+  .adminTableLike{display:grid;gap:10px}
+  .adminLog{min-height:120px;font-family:monospace;font-size:12px;white-space:pre-wrap}
+  .progressBox{display:none;margin-top:12px;padding:12px;border-radius:16px;border:1px solid rgba(34,211,238,.25);background:rgba(34,211,238,.08)}
+  .adminSmallMuted{color:#9aa4b2;font-size:12px;word-break:break-all}
+  @media(max-width:860px){
+    .adminSearchGrid,.adminPatientHeader,.adminMiniGrid,.adminDetailGrid,.adminAudioGrid{grid-template-columns:1fr}
+    .adminBadges{justify-content:flex-start}
+    .adminToolbar button,.adminToolbar a,.adminTabs button{flex:1 1 100%}
+  }
+</style>
 </head>
 <body>
 <header class="top">
@@ -17,10 +49,10 @@
 </header>
 
 <main class="container">
-  <section id="adminLoginCard" class="card">
-    <h1>Painel administrativo</h1>
+  <section id="adminLoginCard" class="card adminHero">
+    <h1>Painel administrativo Vozia</h1>
     <p class="small">
-      Entre com o e-mail autorizado como administrador. Para segurança, o admin usa Supabase.
+      Entre com seu usuário autorizado. O painel cruza os dados pelo <b>user_id</b> real do Supabase, não pelo e-mail do familiar de contato.
     </p>
 
     <div id="adminMsg" class="msg"></div>
@@ -34,13 +66,12 @@
     <button id="adminLoginBtn" type="button">Entrar no admin</button>
 
     <div class="noticeBox">
-      Se você conseguir logar, mas os dados não aparecerem, rode o arquivo
-      <b>supabase_admin_policies.sql</b> no SQL Editor do Supabase.
+      Se logar, mas os dados não aparecerem, rode o arquivo <b>supabase_admin_completo_melhorado.sql</b>.
     </div>
   </section>
 
   <section id="adminArea" class="hidden">
-    <section class="card">
+    <section class="card adminHero">
       <div class="row">
         <div>
           <h1>Dashboard Vozia</h1>
@@ -54,37 +85,63 @@
       <div><b id="stTotal">0</b><span>pacientes</span></div>
       <div><b id="stRecordings">0</b><span>gravações</span></div>
       <div><b id="stLegacy">0</b><span>mensagens</span></div>
-      <div><b id="stCare">0</b><span>pedidos Vozia Care</span></div>
+      <div><b id="stCare">0</b><span>pedidos Care</span></div>
     </section>
 
     <section class="card">
-      <h2>Buscar pacientes</h2>
-      <input id="adminSearch" placeholder="Buscar por nome, e-mail, plano ou ID do cofre">
-      <div id="adminUsersList"></div>
-    </section>
-
-    <section class="grid2">
-      <div class="card">
-        <h2>Pedidos Vozia Care</h2>
-        <div id="adminCareList"></div>
+      <h2>Backup da plataforma</h2>
+      <p class="small">Baixe todos os dados e áudios existentes no Storage, organizados por paciente.</p>
+      <div class="adminToolbar">
+        <button id="backupAllZipBtn" type="button" class="green">Baixar backup da plataforma toda</button>
+        <button id="backupAllJsonBtn" type="button" class="ghost">Baixar manifesto geral JSON</button>
+        <button id="backupPatientsCsvBtn" type="button" class="ghost">Baixar lista de pacientes CSV</button>
       </div>
-
-      <div class="card">
-        <h2>Mensagens de legado</h2>
-        <div id="adminLegacyList"></div>
-      </div>
+      <div id="adminBackupProgress" class="progressBox"></div>
+      <textarea id="adminBackupLog" class="adminLog" placeholder="Logs do backup aparecem aqui."></textarea>
     </section>
-
 
     <section class="card">
+      <h2>Pesquisar qualquer paciente</h2>
+      <div class="adminSearchGrid">
+        <div>
+          <label>Busca geral</label>
+          <input id="adminSearch" placeholder="Nome, e-mail do paciente, e-mail de contato, telefone, cofre, plano ou user_id">
+        </div>
+        <button id="clearSearchBtn" class="ghost" type="button">Limpar</button>
+      </div>
+      <p class="small">
+        Atenção: o perfil do paciente é identificado pelo <b>id/auth.uid</b>. Campos como familiar, contato, telefone ou e-mail de recado são exibidos dentro do perfil, mas não substituem o paciente.
+      </p>
+      <div id="adminUsersList" class="adminList"></div>
+    </section>
+
+    <section id="adminPatientDetail" class="card hidden"></section>
+
+    <section class="adminTabs">
+      <button class="tabBtn" data-tab="carePanel" type="button">Pedidos Care</button>
+      <button class="tabBtn ghost" data-tab="legacyPanel" type="button">Mensagens familiares</button>
+      <button class="tabBtn ghost" data-tab="deletionPanel" type="button">Exclusões</button>
+      <button class="tabBtn ghost" data-tab="recordingsPanel" type="button">Gravações</button>
+    </section>
+
+    <section id="carePanel" class="adminPanel active card">
+      <h2>Pedidos Vozia Care</h2>
+      <div id="adminCareList" class="adminList"></div>
+    </section>
+
+    <section id="legacyPanel" class="adminPanel card">
+      <h2>Mensagens familiares</h2>
+      <div id="adminLegacyList" class="adminList"></div>
+    </section>
+
+    <section id="deletionPanel" class="adminPanel card">
       <h2>Solicitações de exclusão</h2>
-      <p class="small">Pedidos feitos pelos pacientes para análise administrativa.</p>
-      <div id="adminDeletionList"></div>
+      <div id="adminDeletionList" class="adminList"></div>
     </section>
 
-    <section class="card">
+    <section id="recordingsPanel" class="adminPanel card">
       <h2>Últimas gravações</h2>
-      <div id="adminRecordingsList"></div>
+      <div id="adminRecordingsList" class="adminList"></div>
     </section>
   </section>
 </main>
@@ -95,6 +152,5 @@
 <script src="/supabase-api.js"></script>
 <script src="/admin.js"></script>
 <script src="/vozia-safe-nav.js"></script>
-<script src="/supabase-legacy-view-delete-fix.js"></script>
 </body>
 </html>
