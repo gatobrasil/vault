@@ -176,6 +176,40 @@ async function voziaListLegacyMessages() {
   return data || [];
 }
 
+
+// ============================================================
+// VOZIA — Helpers de bucket para mensagens de legado
+// ============================================================
+async function voziaUploadLegacyWithFallback(path, fileBlob, options = {}) {
+  const sb = voziaSupabase || iniciarSupabase();
+  if (!sb) throw new Error("Supabase não configurado.");
+
+  const buckets = [
+    "legacy-audios",
+    "áudios legados",
+    "audios legados",
+    "áudios-legados",
+    "audios-legados"
+  ];
+
+  const errors = [];
+
+  for (const bucket of buckets) {
+    try {
+      const { data, error } = await sb.storage
+        .from(bucket)
+        .upload(path, fileBlob, options);
+
+      if (!error) return { bucket, data };
+      errors.push(`${bucket}: ${error.message || JSON.stringify(error)}`);
+    } catch (e) {
+      errors.push(`${bucket}: ${e.message || e}`);
+    }
+  }
+
+  throw new Error("Não consegui enviar o áudio legado para o Storage. Tentativas: " + errors.join(" | "));
+}
+
 async function voziaSaveLegacyMessage({ title, recipient, note, isPriority, audioBlob, durationMs, mimeType, extension }) {
   const sb = voziaSupabase || iniciarSupabase();
   if (!sb) throw new Error("Supabase não configurado.");
@@ -189,16 +223,17 @@ async function voziaSaveLegacyMessage({ title, recipient, note, isPriority, audi
     const finalMime = mimeType || audioBlob?.type || "audio/mp4";
     const safeExt = extension || (
       finalMime.includes("mp4") ? "mp4" :
+      finalMime.includes("aac") ? "aac" :
       finalMime.includes("mpeg") ? "mp3" :
       finalMime.includes("ogg") ? "ogg" :
       finalMime.includes("wav") ? "wav" :
       "webm"
     );
 
-    const fileName = `mensagem-${Date.now()}.${safeExt}`;
+    const fileName = `mensagem-legado-${Date.now()}.${safeExt}`;
     audioPath = `${user.id}/${fileName}`;
 
-    await voziaUploadWithBucketFallback("legacy", audioPath, audioBlob, {
+    await voziaUploadLegacyWithFallback(audioPath, audioBlob, {
       contentType: finalMime,
       upsert: false
     });
@@ -206,9 +241,9 @@ async function voziaSaveLegacyMessage({ title, recipient, note, isPriority, audi
 
   const { error } = await sb.from("legacy_messages").insert({
     user_id: user.id,
-    title,
-    recipient,
-    note,
+    title: title || "Mensagem para família",
+    recipient: recipient || "Família",
+    note: note || "",
     audio_path: audioPath,
     duration_ms: durationMs || null,
     is_priority: !!isPriority

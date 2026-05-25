@@ -946,3 +946,8 @@ img,video,audio,canvas,svg{max-width:100%}
     grid-template-columns:repeat(3,1fr)!important;
   }
 }
+
+/* === V8.14 legacy recorder fix === */
+#legacyListenBtn{min-width:160px}
+#legacyDebugMsg{margin-top:14px}
+#legacyTimerBox{margin-top:14px;margin-bottom:14px}
